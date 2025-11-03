@@ -1,24 +1,11 @@
 import { Close } from '@mui/icons-material';
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, AlertTitle, Box, IconButton, Stack } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
 import { CalendarView } from './components/calendar';
+import { OverlapDialog, RecurringEventDialog } from './components/dialogs';
 import { EventForm as EventFormComponent, EventList } from './components/event';
-import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
@@ -182,6 +169,33 @@ function App() {
   };
 
   /**
+   * 일정 겹침 확인 후 저장 처리
+   *
+   * @description
+   * 일정 겹침 경고 다이얼로그에서 "계속 진행" 버튼 클릭 시 호출
+   */
+  const handleConfirmOverlap = async () => {
+    setIsOverlapDialogOpen(false);
+
+    await saveEvent({
+      id: editingEvent ? editingEvent.id : undefined,
+      title,
+      date,
+      startTime,
+      endTime,
+      description,
+      location,
+      category,
+      repeat: {
+        type: isRepeating ? repeatType : 'none',
+        interval: repeatInterval,
+        endDate: repeatEndDate || undefined,
+      },
+      notificationTime,
+    });
+  };
+
+  /**
    * 일정 추가 또는 수정 처리
    *
    * @description
@@ -333,45 +347,12 @@ function App() {
       </Stack>
 
       {/* ========== 일정 겹침 경고 다이얼로그 ========== */}
-      <Dialog open={isOverlapDialogOpen} onClose={() => setIsOverlapDialogOpen(false)}>
-        <DialogTitle>일정 겹침 경고</DialogTitle>
-        <DialogContent>
-          <DialogContentText>다음 일정과 겹칩니다:</DialogContentText>
-          {overlappingEvents.map((event) => (
-            <Typography key={event.id} sx={{ ml: 1, mb: 1 }}>
-              {event.title} ({event.date} {event.startTime}-{event.endTime})
-            </Typography>
-          ))}
-          <DialogContentText>계속 진행하시겠습니까?</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsOverlapDialogOpen(false)}>취소</Button>
-          <Button
-            color="error"
-            onClick={() => {
-              setIsOverlapDialogOpen(false);
-              saveEvent({
-                id: editingEvent ? editingEvent.id : undefined,
-                title,
-                date,
-                startTime,
-                endTime,
-                description,
-                location,
-                category,
-                repeat: {
-                  type: isRepeating ? repeatType : 'none',
-                  interval: repeatInterval,
-                  endDate: repeatEndDate || undefined,
-                },
-                notificationTime,
-              });
-            }}
-          >
-            계속 진행
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <OverlapDialog
+        open={isOverlapDialogOpen}
+        onClose={() => setIsOverlapDialogOpen(false)}
+        overlappingEvents={overlappingEvents}
+        onConfirm={handleConfirmOverlap}
+      />
 
       {/* ========== 반복 일정 수정/삭제 확인 다이얼로그 ========== */}
       <RecurringEventDialog
