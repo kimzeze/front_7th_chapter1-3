@@ -17,12 +17,6 @@ import {
   MenuItem,
   Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -30,10 +24,11 @@ import {
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
-import CalendarCell from './components/calendar/CalendarCell';
 import CalendarNavigation from './components/calendar/CalendarNavigation';
+import MonthView from './components/calendar/MonthView';
+import WeekView from './components/calendar/WeekView';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
-import { CATEGORIES, NOTIFICATION_OPTIONS, WEEK_DAYS } from './constants';
+import { CATEGORIES, NOTIFICATION_OPTIONS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
@@ -41,14 +36,7 @@ import { useNotifications } from './hooks/useNotifications.ts';
 import { useRecurringEventOperations } from './hooks/useRecurringEventOperations.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm, RepeatType } from './types.ts';
-import {
-  formatDate,
-  formatMonth,
-  formatWeek,
-  getEventsForDay,
-  getWeekDates,
-  getWeeksAtMonth,
-} from './utils/dateUtils.ts';
+import { getWeekDates, getWeeksAtMonth } from './utils/dateUtils.ts';
 import { findOverlappingEvents } from './utils/eventOverlap.ts';
 import { getTimeErrorMessage } from './utils/timeValidation.ts';
 
@@ -322,109 +310,6 @@ function App() {
     resetForm();
   };
 
-  /**
-   * 주간 캘린더 뷰 렌더링
-   *
-   * @returns {JSX.Element} 주간 캘린더 테이블
-   * @description
-   * 현재 날짜가 속한 주의 7일(일~토)을 표시하는 테이블 렌더링
-   * - 각 날짜별로 해당하는 일정 목록 표시
-   * - 알림 발생한 일정은 빨간색으로 강조
-   * - 반복 일정은 아이콘으로 표시
-   * - 일정 제목, 알림 상태, 반복 정보를 아이콘과 함께 표시
-   */
-  const renderWeekView = () => {
-    const weekDates = getWeekDates(currentDate);
-    return (
-      <Stack data-testid="week-view" spacing={4} sx={{ width: '100%' }}>
-        <Typography variant="h5">{formatWeek(currentDate)}</Typography>
-        <TableContainer>
-          <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
-            <TableHead>
-              <TableRow>
-                {WEEK_DAYS.map((day) => (
-                  <TableCell key={day} sx={{ width: '14.28%', padding: 1, textAlign: 'center' }}>
-                    {day}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                {weekDates.map((date) => (
-                  <CalendarCell
-                    key={date.toISOString()}
-                    day={date.getDate()}
-                    events={filteredEvents.filter(
-                      (event) => new Date(event.date).toDateString() === date.toDateString()
-                    )}
-                    notifiedEventIds={notifiedEvents}
-                  />
-                ))}
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Stack>
-    );
-  };
-
-  /**
-   * 월간 캘린더 뷰 렌더링
-   *
-   * @returns {JSX.Element} 월간 캘린더 테이블
-   * @description
-   * 현재 날짜가 속한 월의 모든 날짜를 주 단위로 표시하는 테이블 렌더링
-   * - 해당 월의 모든 주(최대 6주) 표시
-   * - 각 날짜별로 해당하는 일정 목록 표시
-   * - 공휴일 정보 표시
-   * - 알림 발생한 일정은 빨간색으로 강조
-   * - 반복 일정은 아이콘으로 표시
-   */
-  const renderMonthView = () => {
-    const weeks = getWeeksAtMonth(currentDate);
-
-    return (
-      <Stack data-testid="month-view" spacing={4} sx={{ width: '100%' }}>
-        <Typography variant="h5">{formatMonth(currentDate)}</Typography>
-        <TableContainer>
-          <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
-            <TableHead>
-              <TableRow>
-                {WEEK_DAYS.map((day) => (
-                  <TableCell key={day} sx={{ width: '14.28%', padding: 1, textAlign: 'center' }}>
-                    {day}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {weeks.map((week, weekIndex) => (
-                <TableRow key={weekIndex}>
-                  {week.map((day, dayIndex) => {
-                    const dateString = day ? formatDate(currentDate, day) : '';
-                    const holiday = holidays[dateString];
-                    const eventsForDay = day ? getEventsForDay(filteredEvents, day) : [];
-
-                    return (
-                      <CalendarCell
-                        key={dayIndex}
-                        day={day}
-                        events={eventsForDay}
-                        notifiedEventIds={notifiedEvents}
-                        holiday={holiday}
-                      />
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Stack>
-    );
-  };
-
   // ============ 메인 UI 렌더링 ============
   return (
     <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
@@ -643,8 +528,23 @@ function App() {
           />
 
           {/* 선택된 뷰 렌더링 (주간/월간) */}
-          {view === 'week' && renderWeekView()}
-          {view === 'month' && renderMonthView()}
+          {view === 'week' && (
+            <WeekView
+              currentDate={currentDate}
+              weekDates={getWeekDates(currentDate)}
+              events={filteredEvents}
+              notifiedEventIds={notifiedEvents}
+            />
+          )}
+          {view === 'month' && (
+            <MonthView
+              currentDate={currentDate}
+              weeks={getWeeksAtMonth(currentDate)}
+              events={filteredEvents}
+              notifiedEventIds={notifiedEvents}
+              holidays={holidays}
+            />
+          )}
         </Stack>
 
         {/* ========== 우측: 일정 검색 및 목록 ========== */}
