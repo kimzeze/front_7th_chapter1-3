@@ -1,12 +1,4 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  Close,
-  Delete,
-  Edit,
-  Notifications,
-  Repeat,
-} from '@mui/icons-material';
+import { Close, Delete, Edit, Notifications, Repeat } from '@mui/icons-material';
 import {
   Alert,
   AlertTitle,
@@ -39,6 +31,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
 import CalendarCell from './components/calendar/CalendarCell';
+import CalendarNavigation from './components/calendar/CalendarNavigation';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS, WEEK_DAYS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -642,27 +635,12 @@ function App() {
         <Stack flex={1} spacing={5}>
           <Typography variant="h4">일정 보기</Typography>
 
-          <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-            <IconButton aria-label="Previous" onClick={() => navigate('prev')}>
-              <ChevronLeft />
-            </IconButton>
-            <Select
-              size="small"
-              aria-label="뷰 타입 선택"
-              value={view}
-              onChange={(e) => setView(e.target.value as 'week' | 'month')}
-            >
-              <MenuItem value="week" aria-label="week-option">
-                Week
-              </MenuItem>
-              <MenuItem value="month" aria-label="month-option">
-                Month
-              </MenuItem>
-            </Select>
-            <IconButton aria-label="Next" onClick={() => navigate('next')}>
-              <ChevronRight />
-            </IconButton>
-          </Stack>
+          <CalendarNavigation
+            view={view}
+            onViewChange={setView}
+            onPrevious={() => navigate('prev')}
+            onNext={() => navigate('next')}
+          />
 
           {/* 선택된 뷰 렌더링 (주간/월간) */}
           {view === 'week' && renderWeekView()}
