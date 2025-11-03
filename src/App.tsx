@@ -1,4 +1,4 @@
-import { Close, Delete, Edit, Notifications, Repeat } from '@mui/icons-material';
+import { Close } from '@mui/icons-material';
 import {
   Alert,
   AlertTitle,
@@ -25,6 +25,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
 import { CalendarView } from './components/calendar';
+import EventItem from './components/event/EventItem';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -36,30 +37,6 @@ import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm, RepeatType } from './types.ts';
 import { findOverlappingEvents } from './utils/eventOverlap.ts';
 import { getTimeErrorMessage } from './utils/timeValidation.ts';
-
-/**
- * 반복 유형을 한글 단위로 변환
- * @param {RepeatType} type - 반복 유형 (daily, weekly, monthly, yearly)
- * @returns {string} 한글 단위 (일, 주, 월, 년)
- * @example
- * getRepeatTypeLabel('daily') // '일'
- * getRepeatTypeLabel('weekly') // '주'
- * @note 이 함수는 Phase 2.1에서 EventItem 컴포넌트로 분리될 예정입니다.
- */
-const getRepeatTypeLabel = (type: RepeatType): string => {
-  switch (type) {
-    case 'daily':
-      return '일';
-    case 'weekly':
-      return '주';
-    case 'monthly':
-      return '월';
-    case 'yearly':
-      return '년';
-    default:
-      return '';
-  }
-};
 
 function App() {
   const {
@@ -547,70 +524,13 @@ function App() {
             <Typography>검색 결과가 없습니다.</Typography>
           ) : (
             filteredEvents.map((event) => (
-              <Box key={event.id} sx={{ border: 1, borderRadius: 2, p: 3, width: '100%' }}>
-                <Stack direction="row" justifyContent="space-between">
-                  {/* 일정 상세 정보 */}
-                  <Stack>
-                    {/* 제목 및 아이콘 */}
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {notifiedEvents.includes(event.id) && <Notifications color="error" />}
-                      {event.repeat.type !== 'none' && (
-                        <Tooltip
-                          title={`${event.repeat.interval}${getRepeatTypeLabel(
-                            event.repeat.type
-                          )}마다 반복${
-                            event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
-                          }`}
-                        >
-                          <Repeat fontSize="small" />
-                        </Tooltip>
-                      )}
-                      <Typography
-                        fontWeight={notifiedEvents.includes(event.id) ? 'bold' : 'normal'}
-                        color={notifiedEvents.includes(event.id) ? 'error' : 'inherit'}
-                      >
-                        {event.title}
-                      </Typography>
-                    </Stack>
-                    {/* 일정 세부 정보 */}
-                    <Typography>{event.date}</Typography>
-                    <Typography>
-                      {event.startTime} - {event.endTime}
-                    </Typography>
-                    <Typography>{event.description}</Typography>
-                    <Typography>{event.location}</Typography>
-                    <Typography>카테고리: {event.category}</Typography>
-                    {event.repeat.type !== 'none' && (
-                      <Typography>
-                        반복: {event.repeat.interval}
-                        {event.repeat.type === 'daily' && '일'}
-                        {event.repeat.type === 'weekly' && '주'}
-                        {event.repeat.type === 'monthly' && '월'}
-                        {event.repeat.type === 'yearly' && '년'}
-                        마다
-                        {event.repeat.endDate && ` (종료: ${event.repeat.endDate})`}
-                      </Typography>
-                    )}
-                    <Typography>
-                      알림:{' '}
-                      {
-                        NOTIFICATION_OPTIONS.find(
-                          (option) => option.value === event.notificationTime
-                        )?.label
-                      }
-                    </Typography>
-                  </Stack>
-                  {/* 수정/삭제 버튼 */}
-                  <Stack>
-                    <IconButton aria-label="Edit event" onClick={() => handleEditEvent(event)}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton aria-label="Delete event" onClick={() => handleDeleteEvent(event)}>
-                      <Delete />
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              </Box>
+              <EventItem
+                key={event.id}
+                event={event}
+                isNotified={notifiedEvents.includes(event.id)}
+                onEdit={handleEditEvent}
+                onDelete={handleDeleteEvent}
+              />
             ))
           )}
         </Stack>
