@@ -38,6 +38,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
+import EventCard from './components/calendar/EventCard';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS, WEEK_DAYS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -46,7 +47,6 @@ import { useEventOperations } from './hooks/useEventOperations.ts';
 import { useNotifications } from './hooks/useNotifications.ts';
 import { useRecurringEventOperations } from './hooks/useRecurringEventOperations.ts';
 import { useSearch } from './hooks/useSearch.ts';
-import { EVENT_BOX_STYLES } from './styles/eventBoxStyles';
 import { Event, EventForm, RepeatType } from './types.ts';
 import {
   formatDate,
@@ -66,6 +66,7 @@ import { getTimeErrorMessage } from './utils/timeValidation.ts';
  * @example
  * getRepeatTypeLabel('daily') // '일'
  * getRepeatTypeLabel('weekly') // '주'
+ * @note 이 함수는 Phase 2.1에서 EventItem 컴포넌트로 분리될 예정입니다.
  */
 const getRepeatTypeLabel = (type: RepeatType): string => {
   switch (type) {
@@ -377,44 +378,13 @@ function App() {
                       .filter(
                         (event) => new Date(event.date).toDateString() === date.toDateString()
                       )
-                      .map((event) => {
-                        const isNotified = notifiedEvents.includes(event.id);
-                        const isRepeating = event.repeat.type !== 'none';
-
-                        return (
-                          <Box
-                            key={event.id}
-                            sx={{
-                              ...EVENT_BOX_STYLES.common,
-                              ...(isNotified ? EVENT_BOX_STYLES.notified : EVENT_BOX_STYLES.normal),
-                            }}
-                          >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              {/* 알림 아이콘 */}
-                              {isNotified && <Notifications fontSize="small" />}
-                              {/* 반복 일정 아이콘 */}
-                              {isRepeating && (
-                                <Tooltip
-                                  title={`${event.repeat.interval}${getRepeatTypeLabel(
-                                    event.repeat.type
-                                  )}마다 반복${
-                                    event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
-                                  }`}
-                                >
-                                  <Repeat fontSize="small" />
-                                </Tooltip>
-                              )}
-                              <Typography
-                                variant="caption"
-                                noWrap
-                                sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}
-                              >
-                                {event.title}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                        );
-                      })}
+                      .map((event) => (
+                        <EventCard
+                          key={event.id}
+                          event={event}
+                          isNotified={notifiedEvents.includes(event.id)}
+                        />
+                      ))}
                   </TableCell>
                 ))}
               </TableRow>
@@ -486,53 +456,13 @@ function App() {
                               </Typography>
                             )}
                             {/* 해당 날짜의 일정 목록 */}
-                            {getEventsForDay(filteredEvents, day).map((event) => {
-                              const isNotified = notifiedEvents.includes(event.id);
-                              const isRepeating = event.repeat.type !== 'none';
-
-                              return (
-                                <Box
-                                  key={event.id}
-                                  sx={{
-                                    p: 0.5,
-                                    my: 0.5,
-                                    backgroundColor: isNotified ? '#ffebee' : '#f5f5f5',
-                                    borderRadius: 1,
-                                    fontWeight: isNotified ? 'bold' : 'normal',
-                                    color: isNotified ? '#d32f2f' : 'inherit',
-                                    minHeight: '18px',
-                                    width: '100%',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <Stack direction="row" spacing={1} alignItems="center">
-                                    {/* 알림 아이콘 */}
-                                    {isNotified && <Notifications fontSize="small" />}
-                                    {/* 반복 일정 아이콘 */}
-                                    {isRepeating && (
-                                      <Tooltip
-                                        title={`${event.repeat.interval}${getRepeatTypeLabel(
-                                          event.repeat.type
-                                        )}마다 반복${
-                                          event.repeat.endDate
-                                            ? ` (종료: ${event.repeat.endDate})`
-                                            : ''
-                                        }`}
-                                      >
-                                        <Repeat fontSize="small" />
-                                      </Tooltip>
-                                    )}
-                                    <Typography
-                                      variant="caption"
-                                      noWrap
-                                      sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}
-                                    >
-                                      {event.title}
-                                    </Typography>
-                                  </Stack>
-                                </Box>
-                              );
-                            })}
+                            {getEventsForDay(filteredEvents, day).map((event) => (
+                              <EventCard
+                                key={event.id}
+                                event={event}
+                                isNotified={notifiedEvents.includes(event.id)}
+                              />
+                            ))}
                           </>
                         )}
                       </TableCell>
