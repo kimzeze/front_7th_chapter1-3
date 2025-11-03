@@ -69,14 +69,14 @@ export default function EventItem({ event, isNotified, onEdit, onDelete }: Event
         <Stack>
           {/* 제목 및 아이콘 */}
           <Stack direction="row" spacing={1} alignItems="center">
-            {isNotified && <Notifications color="error" data-testid="notified-icon" />}
+            {isNotified && <Notifications color="error" data-testid="NotificationsIcon" />}
             {event.repeat.type !== 'none' && (
               <Tooltip
                 title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
                   event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
                 }`}
               >
-                <Repeat fontSize="small" data-testid="repeat-icon" />
+                <Repeat fontSize="small" data-testid="RepeatIcon" />
               </Tooltip>
             )}
             <Typography
