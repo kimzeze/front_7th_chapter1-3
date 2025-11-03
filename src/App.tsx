@@ -38,7 +38,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
-import EventCard from './components/calendar/EventCard';
+import CalendarCell from './components/calendar/CalendarCell';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS, WEEK_DAYS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -359,33 +359,14 @@ function App() {
             <TableBody>
               <TableRow>
                 {weekDates.map((date) => (
-                  <TableCell
+                  <CalendarCell
                     key={date.toISOString()}
-                    sx={{
-                      height: '120px',
-                      verticalAlign: 'top',
-                      width: '14.28%',
-                      padding: 1,
-                      border: '1px solid #e0e0e0',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Typography variant="body2" fontWeight="bold">
-                      {date.getDate()}
-                    </Typography>
-                    {/* 해당 날짜의 일정 목록 */}
-                    {filteredEvents
-                      .filter(
-                        (event) => new Date(event.date).toDateString() === date.toDateString()
-                      )
-                      .map((event) => (
-                        <EventCard
-                          key={event.id}
-                          event={event}
-                          isNotified={notifiedEvents.includes(event.id)}
-                        />
-                      ))}
-                  </TableCell>
+                    day={date.getDate()}
+                    events={filteredEvents.filter(
+                      (event) => new Date(event.date).toDateString() === date.toDateString()
+                    )}
+                    notifiedEventIds={notifiedEvents}
+                  />
                 ))}
               </TableRow>
             </TableBody>
@@ -430,42 +411,16 @@ function App() {
                   {week.map((day, dayIndex) => {
                     const dateString = day ? formatDate(currentDate, day) : '';
                     const holiday = holidays[dateString];
+                    const eventsForDay = day ? getEventsForDay(filteredEvents, day) : [];
 
                     return (
-                      <TableCell
+                      <CalendarCell
                         key={dayIndex}
-                        sx={{
-                          height: '120px',
-                          verticalAlign: 'top',
-                          width: '14.28%',
-                          padding: 1,
-                          border: '1px solid #e0e0e0',
-                          overflow: 'hidden',
-                          position: 'relative',
-                        }}
-                      >
-                        {day && (
-                          <>
-                            <Typography variant="body2" fontWeight="bold">
-                              {day}
-                            </Typography>
-                            {/* 공휴일 표시 */}
-                            {holiday && (
-                              <Typography variant="body2" color="error">
-                                {holiday}
-                              </Typography>
-                            )}
-                            {/* 해당 날짜의 일정 목록 */}
-                            {getEventsForDay(filteredEvents, day).map((event) => (
-                              <EventCard
-                                key={event.id}
-                                event={event}
-                                isNotified={notifiedEvents.includes(event.id)}
-                              />
-                            ))}
-                          </>
-                        )}
-                      </TableCell>
+                        day={day}
+                        events={eventsForDay}
+                        notifiedEventIds={notifiedEvents}
+                        holiday={holiday}
+                      />
                     );
                   })}
                 </TableRow>
