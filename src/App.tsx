@@ -1,11 +1,11 @@
-import { Close } from '@mui/icons-material';
-import { Alert, AlertTitle, Box, IconButton, Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
 import { CalendarView } from './components/calendar';
 import { OverlapDialog, RecurringEventDialog } from './components/dialogs';
 import { EventForm as EventFormComponent, EventList } from './components/event';
+import { NotificationToast } from './components/notifications';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
@@ -368,27 +368,10 @@ function App() {
       />
 
       {/* ========== 알림 토스트 영역 (화면 우측 상단 고정) ========== */}
-      {notifications.length > 0 && (
-        <Stack position="fixed" top={16} right={16} spacing={2} alignItems="flex-end">
-          {notifications.map((notification, index) => (
-            <Alert
-              key={index}
-              severity="info"
-              sx={{ width: 'auto' }}
-              action={
-                <IconButton
-                  size="small"
-                  onClick={() => setNotifications((prev) => prev.filter((_, i) => i !== index))}
-                >
-                  <Close />
-                </IconButton>
-              }
-            >
-              <AlertTitle>{notification.message}</AlertTitle>
-            </Alert>
-          ))}
-        </Stack>
-      )}
+      <NotificationToast
+        notifications={notifications}
+        onClose={(index) => setNotifications((prev) => prev.filter((_, i) => i !== index))}
+      />
     </Box>
   );
 }
