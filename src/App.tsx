@@ -25,8 +25,7 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
 import { CalendarView } from './components/calendar';
-import EventItem from './components/event/EventItem';
-import EventSearchInput from './components/event/EventSearchInput';
+import { EventList } from './components/event';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -503,29 +502,14 @@ function App() {
         />
 
         {/* ========== 우측: 일정 검색 및 목록 ========== */}
-        <Stack
-          data-testid="event-list"
-          spacing={2}
-          sx={{ width: '30%', height: '100%', overflowY: 'auto' }}
-        >
-          {/* 일정 검색 입력 */}
-          <EventSearchInput value={searchTerm} onChange={setSearchTerm} />
-
-          {/* 일정 목록 또는 빈 상태 */}
-          {filteredEvents.length === 0 ? (
-            <Typography>검색 결과가 없습니다.</Typography>
-          ) : (
-            filteredEvents.map((event) => (
-              <EventItem
-                key={event.id}
-                event={event}
-                isNotified={notifiedEvents.includes(event.id)}
-                onEdit={handleEditEvent}
-                onDelete={handleDeleteEvent}
-              />
-            ))
-          )}
-        </Stack>
+        <EventList
+          events={filteredEvents}
+          notifiedEventIds={notifiedEvents}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onEditEvent={handleEditEvent}
+          onDeleteEvent={handleDeleteEvent}
+        />
       </Stack>
 
       {/* ========== 일정 겹침 경고 다이얼로그 ========== */}
