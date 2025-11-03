@@ -24,9 +24,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
-import CalendarNavigation from './components/calendar/CalendarNavigation';
-import MonthView from './components/calendar/MonthView';
-import WeekView from './components/calendar/WeekView';
+import { CalendarView } from './components/calendar';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -36,7 +34,6 @@ import { useNotifications } from './hooks/useNotifications.ts';
 import { useRecurringEventOperations } from './hooks/useRecurringEventOperations.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm, RepeatType } from './types.ts';
-import { getWeekDates, getWeeksAtMonth } from './utils/dateUtils.ts';
 import { findOverlappingEvents } from './utils/eventOverlap.ts';
 import { getTimeErrorMessage } from './utils/timeValidation.ts';
 
@@ -517,35 +514,15 @@ function App() {
         </Stack>
 
         {/* ========== 중앙: 캘린더 뷰 ========== */}
-        <Stack flex={1} spacing={5}>
-          <Typography variant="h4">일정 보기</Typography>
-
-          <CalendarNavigation
-            view={view}
-            onViewChange={setView}
-            onPrevious={() => navigate('prev')}
-            onNext={() => navigate('next')}
-          />
-
-          {/* 선택된 뷰 렌더링 (주간/월간) */}
-          {view === 'week' && (
-            <WeekView
-              currentDate={currentDate}
-              weekDates={getWeekDates(currentDate)}
-              events={filteredEvents}
-              notifiedEventIds={notifiedEvents}
-            />
-          )}
-          {view === 'month' && (
-            <MonthView
-              currentDate={currentDate}
-              weeks={getWeeksAtMonth(currentDate)}
-              events={filteredEvents}
-              notifiedEventIds={notifiedEvents}
-              holidays={holidays}
-            />
-          )}
-        </Stack>
+        <CalendarView
+          view={view}
+          onViewChange={setView}
+          currentDate={currentDate}
+          onNavigate={navigate}
+          events={filteredEvents}
+          notifiedEventIds={notifiedEvents}
+          holidays={holidays}
+        />
 
         {/* ========== 우측: 일정 검색 및 목록 ========== */}
         <Stack
