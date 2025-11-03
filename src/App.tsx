@@ -39,12 +39,14 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
+import { CATEGORIES, NOTIFICATION_OPTIONS, WEEK_DAYS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
 import { useNotifications } from './hooks/useNotifications.ts';
 import { useRecurringEventOperations } from './hooks/useRecurringEventOperations.ts';
 import { useSearch } from './hooks/useSearch.ts';
+import { EVENT_BOX_STYLES } from './styles/eventBoxStyles';
 import { Event, EventForm, RepeatType } from './types.ts';
 import {
   formatDate,
@@ -57,40 +59,14 @@ import {
 import { findOverlappingEvents } from './utils/eventOverlap.ts';
 import { getTimeErrorMessage } from './utils/timeValidation.ts';
 
-const categories = ['업무', '개인', '가족', '기타'];
-
-const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-
-const notificationOptions = [
-  { value: 1, label: '1분 전' },
-  { value: 10, label: '10분 전' },
-  { value: 60, label: '1시간 전' },
-  { value: 120, label: '2시간 전' },
-  { value: 1440, label: '1일 전' },
-];
-
-// 스타일 상수
-const eventBoxStyles = {
-  notified: {
-    backgroundColor: '#ffebee',
-    fontWeight: 'bold',
-    color: '#d32f2f',
-  },
-  normal: {
-    backgroundColor: '#f5f5f5',
-    fontWeight: 'normal',
-    color: 'inherit',
-  },
-  common: {
-    p: 0.5,
-    my: 0.5,
-    borderRadius: 1,
-    minHeight: '18px',
-    width: '100%',
-    overflow: 'hidden',
-  },
-};
-
+/**
+ * 반복 유형을 한글 단위로 변환
+ * @param {RepeatType} type - 반복 유형 (daily, weekly, monthly, yearly)
+ * @returns {string} 한글 단위 (일, 주, 월, 년)
+ * @example
+ * getRepeatTypeLabel('daily') // '일'
+ * getRepeatTypeLabel('weekly') // '주'
+ */
 const getRepeatTypeLabel = (type: RepeatType): string => {
   switch (type) {
     case 'daily':
@@ -140,33 +116,52 @@ function App() {
     editEvent,
   } = useEventForm();
 
+  // ============ 일정 CRUD 작업 ============
   const { events, saveEvent, deleteEvent, createRepeatEvent, fetchEvents } = useEventOperations(
     Boolean(editingEvent),
     () => setEditingEvent(null)
   );
 
+  // ============ 반복 일정 작업 ============
   const { handleRecurringEdit, handleRecurringDelete } = useRecurringEventOperations(
     events,
     async () => {
-      // After recurring edit, refresh events from server
+      // 반복 일정 수정/삭제 후 서버에서 최신 일정 목록 가져오기
       await fetchEvents();
     }
   );
 
+  // ============ 알림, 캘린더 뷰, 검색 ============
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
   const { view, setView, currentDate, holidays, navigate } = useCalendarView();
   const { searchTerm, filteredEvents, setSearchTerm } = useSearch(events, currentDate, view);
 
+  // ============ 다이얼로그 및 UI 상태 ============
+  /** 일정 겹침 경고 다이얼로그 표시 상태 */
   const [isOverlapDialogOpen, setIsOverlapDialogOpen] = useState(false);
+  /** 겹치는 일정 목록 */
   const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
+  /** 반복 일정 수정/삭제 다이얼로그 표시 상태 */
   const [isRecurringDialogOpen, setIsRecurringDialogOpen] = useState(false);
+  /** 수정 대기 중인 반복 일정 */
   const [pendingRecurringEdit, setPendingRecurringEdit] = useState<Event | null>(null);
+  /** 삭제 대기 중인 반복 일정 */
   const [pendingRecurringDelete, setPendingRecurringDelete] = useState<Event | null>(null);
-  const [recurringEditMode, setRecurringEditMode] = useState<boolean | null>(null); // true = single, false = all
+  /** 반복 일정 수정 모드 - true: 단일 일정만 수정, false: 모든 반복 일정 수정 */
+  const [recurringEditMode, setRecurringEditMode] = useState<boolean | null>(null);
+  /** 반복 일정 다이얼로그 모드 - 'edit': 수정, 'delete': 삭제 */
   const [recurringDialogMode, setRecurringDialogMode] = useState<'edit' | 'delete'>('edit');
 
   const { enqueueSnackbar } = useSnackbar();
 
+  /**
+   * 반복 일정 수정/삭제 확인 핸들러
+   *
+   * @param {boolean} editSingleOnly - true: 단일 일정만 처리, false: 모든 반복 일정 처리
+   * @description
+   * - edit 모드: 사용자가 선택한 수정 범위(단일/전체)를 저장하고 편집 폼으로 이동
+   * - delete 모드: 사용자가 선택한 삭제 범위에 따라 반복 일정 삭제 처리
+   */
   const handleRecurringConfirm = async (editSingleOnly: boolean) => {
     if (recurringDialogMode === 'edit' && pendingRecurringEdit) {
       // 편집 모드 저장하고 편집 폼으로 이동
@@ -188,10 +183,26 @@ function App() {
     }
   };
 
+  /**
+   * 반복 일정 여부 확인
+   *
+   * @param {Event} event - 확인할 일정 객체
+   * @returns {boolean} 반복 일정이면 true, 아니면 false
+   * @description
+   * 일정의 repeat.type이 'none'이 아니고 repeat.interval이 0보다 크면 반복 일정으로 판단
+   */
   const isRecurringEvent = (event: Event): boolean => {
     return event.repeat.type !== 'none' && event.repeat.interval > 0;
   };
 
+  /**
+   * 일정 수정 핸들러
+   *
+   * @param {Event} event - 수정할 일정 객체
+   * @description
+   * - 반복 일정: 수정 범위 선택 다이얼로그 표시 (단일/전체)
+   * - 일반 일정: 바로 편집 폼으로 이동
+   */
   const handleEditEvent = (event: Event) => {
     if (isRecurringEvent(event)) {
       // Show recurring edit dialog
@@ -204,6 +215,14 @@ function App() {
     }
   };
 
+  /**
+   * 일정 삭제 핸들러
+   *
+   * @param {Event} event - 삭제할 일정 객체
+   * @description
+   * - 반복 일정: 삭제 범위 선택 다이얼로그 표시 (단일/전체)
+   * - 일반 일정: 바로 삭제 처리
+   */
   const handleDeleteEvent = (event: Event) => {
     if (isRecurringEvent(event)) {
       // Show recurring delete dialog
@@ -216,6 +235,25 @@ function App() {
     }
   };
 
+  /**
+   * 일정 추가 또는 수정 처리
+   *
+   * @description
+   * 일정 생성/수정 시 실행되는 메인 핸들러
+   *
+   * 처리 흐름:
+   * 1. 필수 입력값 검증 (제목, 날짜, 시작/종료 시간)
+   * 2. 시간 유효성 검증
+   * 3. 일정 겹침 검사
+   * 4. 수정 모드인 경우:
+   *    - 반복 일정: 수정 범위(단일/전체)에 따라 처리
+   *    - 일반 일정: 바로 수정
+   * 5. 생성 모드인 경우:
+   *    - 반복 일정: 반복 규칙에 따라 여러 일정 생성
+   *    - 일반 일정: 단일 일정 생성
+   *
+   * @throws {Error} 필수 정보 미입력 또는 시간 설정 오류 시 에러 메시지 표시
+   */
   const addOrUpdateEvent = async () => {
     if (!title || !date || !startTime || !endTime) {
       enqueueSnackbar('필수 정보를 모두 입력해주세요.', { variant: 'error' });
@@ -290,6 +328,17 @@ function App() {
     resetForm();
   };
 
+  /**
+   * 주간 캘린더 뷰 렌더링
+   *
+   * @returns {JSX.Element} 주간 캘린더 테이블
+   * @description
+   * 현재 날짜가 속한 주의 7일(일~토)을 표시하는 테이블 렌더링
+   * - 각 날짜별로 해당하는 일정 목록 표시
+   * - 알림 발생한 일정은 빨간색으로 강조
+   * - 반복 일정은 아이콘으로 표시
+   * - 일정 제목, 알림 상태, 반복 정보를 아이콘과 함께 표시
+   */
   const renderWeekView = () => {
     const weekDates = getWeekDates(currentDate);
     return (
@@ -299,7 +348,7 @@ function App() {
           <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
-                {weekDays.map((day) => (
+                {WEEK_DAYS.map((day) => (
                   <TableCell key={day} sx={{ width: '14.28%', padding: 1, textAlign: 'center' }}>
                     {day}
                   </TableCell>
@@ -323,6 +372,7 @@ function App() {
                     <Typography variant="body2" fontWeight="bold">
                       {date.getDate()}
                     </Typography>
+                    {/* 해당 날짜의 일정 목록 */}
                     {filteredEvents
                       .filter(
                         (event) => new Date(event.date).toDateString() === date.toDateString()
@@ -335,16 +385,19 @@ function App() {
                           <Box
                             key={event.id}
                             sx={{
-                              ...eventBoxStyles.common,
-                              ...(isNotified ? eventBoxStyles.notified : eventBoxStyles.normal),
+                              ...EVENT_BOX_STYLES.common,
+                              ...(isNotified ? EVENT_BOX_STYLES.notified : EVENT_BOX_STYLES.normal),
                             }}
                           >
                             <Stack direction="row" spacing={1} alignItems="center">
+                              {/* 알림 아이콘 */}
                               {isNotified && <Notifications fontSize="small" />}
-                              {/* ! TEST CASE */}
+                              {/* 반복 일정 아이콘 */}
                               {isRepeating && (
                                 <Tooltip
-                                  title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
+                                  title={`${event.repeat.interval}${getRepeatTypeLabel(
+                                    event.repeat.type
+                                  )}마다 반복${
                                     event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
                                   }`}
                                 >
@@ -372,6 +425,18 @@ function App() {
     );
   };
 
+  /**
+   * 월간 캘린더 뷰 렌더링
+   *
+   * @returns {JSX.Element} 월간 캘린더 테이블
+   * @description
+   * 현재 날짜가 속한 월의 모든 날짜를 주 단위로 표시하는 테이블 렌더링
+   * - 해당 월의 모든 주(최대 6주) 표시
+   * - 각 날짜별로 해당하는 일정 목록 표시
+   * - 공휴일 정보 표시
+   * - 알림 발생한 일정은 빨간색으로 강조
+   * - 반복 일정은 아이콘으로 표시
+   */
   const renderMonthView = () => {
     const weeks = getWeeksAtMonth(currentDate);
 
@@ -382,7 +447,7 @@ function App() {
           <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
-                {weekDays.map((day) => (
+                {WEEK_DAYS.map((day) => (
                   <TableCell key={day} sx={{ width: '14.28%', padding: 1, textAlign: 'center' }}>
                     {day}
                   </TableCell>
@@ -414,11 +479,13 @@ function App() {
                             <Typography variant="body2" fontWeight="bold">
                               {day}
                             </Typography>
+                            {/* 공휴일 표시 */}
                             {holiday && (
                               <Typography variant="body2" color="error">
                                 {holiday}
                               </Typography>
                             )}
+                            {/* 해당 날짜의 일정 목록 */}
                             {getEventsForDay(filteredEvents, day).map((event) => {
                               const isNotified = notifiedEvents.includes(event.id);
                               const isRepeating = event.repeat.type !== 'none';
@@ -439,11 +506,14 @@ function App() {
                                   }}
                                 >
                                   <Stack direction="row" spacing={1} alignItems="center">
+                                    {/* 알림 아이콘 */}
                                     {isNotified && <Notifications fontSize="small" />}
-                                    {/* ! TEST CASE */}
+                                    {/* 반복 일정 아이콘 */}
                                     {isRepeating && (
                                       <Tooltip
-                                        title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
+                                        title={`${event.repeat.interval}${getRepeatTypeLabel(
+                                          event.repeat.type
+                                        )}마다 반복${
                                           event.repeat.endDate
                                             ? ` (종료: ${event.repeat.endDate})`
                                             : ''
@@ -477,12 +547,15 @@ function App() {
     );
   };
 
+  // ============ 메인 UI 렌더링 ============
   return (
     <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
       <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
+        {/* ========== 좌측: 일정 입력 폼 ========== */}
         <Stack spacing={2} sx={{ width: '20%' }}>
           <Typography variant="h4">{editingEvent ? '일정 수정' : '일정 추가'}</Typography>
 
+          {/* 제목 입력 */}
           <FormControl fullWidth>
             <FormLabel htmlFor="title">제목</FormLabel>
             <TextField
@@ -493,6 +566,7 @@ function App() {
             />
           </FormControl>
 
+          {/* 날짜 입력 */}
           <FormControl fullWidth>
             <FormLabel htmlFor="date">날짜</FormLabel>
             <TextField
@@ -504,6 +578,7 @@ function App() {
             />
           </FormControl>
 
+          {/* 시작/종료 시간 입력 */}
           <Stack direction="row" spacing={2}>
             <FormControl fullWidth>
               <FormLabel htmlFor="start-time">시작 시간</FormLabel>
@@ -535,6 +610,7 @@ function App() {
             </FormControl>
           </Stack>
 
+          {/* 설명 입력 */}
           <FormControl fullWidth>
             <FormLabel htmlFor="description">설명</FormLabel>
             <TextField
@@ -545,6 +621,7 @@ function App() {
             />
           </FormControl>
 
+          {/* 위치 입력 */}
           <FormControl fullWidth>
             <FormLabel htmlFor="location">위치</FormLabel>
             <TextField
@@ -555,6 +632,7 @@ function App() {
             />
           </FormControl>
 
+          {/* 카테고리 선택 */}
           <FormControl fullWidth>
             <FormLabel id="category-label">카테고리</FormLabel>
             <Select
@@ -565,7 +643,7 @@ function App() {
               aria-labelledby="category-label"
               aria-label="카테고리"
             >
-              {categories.map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <MenuItem key={cat} value={cat} aria-label={`${cat}-option`}>
                   {cat}
                 </MenuItem>
@@ -573,6 +651,7 @@ function App() {
             </Select>
           </FormControl>
 
+          {/* 반복 일정 체크박스 (생성 시에만 표시) */}
           {!editingEvent && (
             <FormControl>
               <FormControlLabel
@@ -595,7 +674,7 @@ function App() {
             </FormControl>
           )}
 
-          {/* ! TEST CASE */}
+          {/* 반복 일정 설정 (생성 시에만 표시) */}
           {isRepeating && !editingEvent && (
             <Stack spacing={2}>
               <FormControl fullWidth>
@@ -646,6 +725,7 @@ function App() {
             </Stack>
           )}
 
+          {/* 알림 시간 선택 */}
           <FormControl fullWidth>
             <FormLabel htmlFor="notification">알림 설정</FormLabel>
             <Select
@@ -654,7 +734,7 @@ function App() {
               value={notificationTime}
               onChange={(e) => setNotificationTime(Number(e.target.value))}
             >
-              {notificationOptions.map((option) => (
+              {NOTIFICATION_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
                 </MenuItem>
@@ -662,6 +742,7 @@ function App() {
             </Select>
           </FormControl>
 
+          {/* 일정 추가/수정 제출 버튼 */}
           <Button
             data-testid="event-submit-button"
             onClick={addOrUpdateEvent}
@@ -672,6 +753,7 @@ function App() {
           </Button>
         </Stack>
 
+        {/* ========== 중앙: 캘린더 뷰 ========== */}
         <Stack flex={1} spacing={5}>
           <Typography variant="h4">일정 보기</Typography>
 
@@ -697,15 +779,18 @@ function App() {
             </IconButton>
           </Stack>
 
+          {/* 선택된 뷰 렌더링 (주간/월간) */}
           {view === 'week' && renderWeekView()}
           {view === 'month' && renderMonthView()}
         </Stack>
 
+        {/* ========== 우측: 일정 검색 및 목록 ========== */}
         <Stack
           data-testid="event-list"
           spacing={2}
           sx={{ width: '30%', height: '100%', overflowY: 'auto' }}
         >
+          {/* 일정 검색 입력 */}
           <FormControl fullWidth>
             <FormLabel htmlFor="search">일정 검색</FormLabel>
             <TextField
@@ -717,18 +802,23 @@ function App() {
             />
           </FormControl>
 
+          {/* 일정 목록 또는 빈 상태 */}
           {filteredEvents.length === 0 ? (
             <Typography>검색 결과가 없습니다.</Typography>
           ) : (
             filteredEvents.map((event) => (
               <Box key={event.id} sx={{ border: 1, borderRadius: 2, p: 3, width: '100%' }}>
                 <Stack direction="row" justifyContent="space-between">
+                  {/* 일정 상세 정보 */}
                   <Stack>
+                    {/* 제목 및 아이콘 */}
                     <Stack direction="row" spacing={1} alignItems="center">
                       {notifiedEvents.includes(event.id) && <Notifications color="error" />}
                       {event.repeat.type !== 'none' && (
                         <Tooltip
-                          title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
+                          title={`${event.repeat.interval}${getRepeatTypeLabel(
+                            event.repeat.type
+                          )}마다 반복${
                             event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
                           }`}
                         >
@@ -742,6 +832,7 @@ function App() {
                         {event.title}
                       </Typography>
                     </Stack>
+                    {/* 일정 세부 정보 */}
                     <Typography>{event.date}</Typography>
                     <Typography>
                       {event.startTime} - {event.endTime}
@@ -763,12 +854,13 @@ function App() {
                     <Typography>
                       알림:{' '}
                       {
-                        notificationOptions.find(
+                        NOTIFICATION_OPTIONS.find(
                           (option) => option.value === event.notificationTime
                         )?.label
                       }
                     </Typography>
                   </Stack>
+                  {/* 수정/삭제 버튼 */}
                   <Stack>
                     <IconButton aria-label="Edit event" onClick={() => handleEditEvent(event)}>
                       <Edit />
@@ -784,6 +876,7 @@ function App() {
         </Stack>
       </Stack>
 
+      {/* ========== 일정 겹침 경고 다이얼로그 ========== */}
       <Dialog open={isOverlapDialogOpen} onClose={() => setIsOverlapDialogOpen(false)}>
         <DialogTitle>일정 겹침 경고</DialogTitle>
         <DialogContent>
@@ -824,6 +917,7 @@ function App() {
         </DialogActions>
       </Dialog>
 
+      {/* ========== 반복 일정 수정/삭제 확인 다이얼로그 ========== */}
       <RecurringEventDialog
         open={isRecurringDialogOpen}
         onClose={() => {
@@ -836,6 +930,7 @@ function App() {
         mode={recurringDialogMode}
       />
 
+      {/* ========== 알림 토스트 영역 (화면 우측 상단 고정) ========== */}
       {notifications.length > 0 && (
         <Stack position="fixed" top={16} right={16} spacing={2} alignItems="flex-end">
           {notifications.map((notification, index) => (
