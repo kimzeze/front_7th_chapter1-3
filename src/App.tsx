@@ -26,6 +26,7 @@ import { useState } from 'react';
 
 import { CalendarView } from './components/calendar';
 import EventItem from './components/event/EventItem';
+import EventSearchInput from './components/event/EventSearchInput';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { CATEGORIES, NOTIFICATION_OPTIONS } from './constants';
 import { useCalendarView } from './hooks/useCalendarView.ts';
@@ -508,16 +509,7 @@ function App() {
           sx={{ width: '30%', height: '100%', overflowY: 'auto' }}
         >
           {/* 일정 검색 입력 */}
-          <FormControl fullWidth>
-            <FormLabel htmlFor="search">일정 검색</FormLabel>
-            <TextField
-              id="search"
-              size="small"
-              placeholder="검색어를 입력하세요"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </FormControl>
+          <EventSearchInput value={searchTerm} onChange={setSearchTerm} />
 
           {/* 일정 목록 또는 빈 상태 */}
           {filteredEvents.length === 0 ? (

@@ -125,4 +125,3 @@ export default function EventItem({ event, isNotified, onEdit, onDelete }: Event
     </Box>
   );
 }
-
