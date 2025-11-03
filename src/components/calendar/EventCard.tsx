@@ -1,8 +1,9 @@
-import { Box, Stack, Tooltip, Typography } from '@mui/material';
 import { Notifications, Repeat } from '@mui/icons-material';
+import { Box, Stack, Tooltip, Typography } from '@mui/material';
+import { DragEvent } from 'react';
 
-import { Event, RepeatType } from '../../types';
 import { EVENT_BOX_STYLES } from '../../styles/eventBoxStyles';
+import { Event, RepeatType } from '../../types';
 
 /**
  * 반복 유형을 한글 단위로 변환
@@ -33,9 +34,9 @@ interface EventCardProps {
   /** 알림이 발생한 일정 여부 (빨간색 강조) */
   isNotified: boolean;
   /** 드래그 시작 핸들러 (D&D 기능) */
-  onDragStart?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragStart?: (e: DragEvent<HTMLDivElement>) => void;
   /** 드래그 종료 핸들러 (D&D 기능) */
-  onDragEnd?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd?: (e: DragEvent<HTMLDivElement>) => void;
 }
 
 /**
