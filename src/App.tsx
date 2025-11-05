@@ -196,6 +196,23 @@ function App() {
   };
 
   /**
+   * 캘린더 날짜 클릭 핸들러
+   *
+   * @param {Date} clickedDate - 클릭된 날짜
+   * @description
+   * 클릭된 날짜를 YYYY-MM-DD 형식으로 변환하여 일정 추가 폼에 자동 입력
+   */
+  const handleDateClick = (clickedDate: Date) => {
+    // YYYY-MM-DD 형식으로 변환
+    const year = clickedDate.getFullYear();
+    const month = String(clickedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(clickedDate.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
+    setDate(dateString);
+  };
+
+  /**
    * 일정 추가 또는 수정 처리
    *
    * @description
@@ -333,6 +350,7 @@ function App() {
           events={filteredEvents}
           notifiedEventIds={notifiedEvents}
           holidays={holidays}
+          onDateClick={handleDateClick}
         />
 
         {/* ========== 우측: 일정 검색 및 목록 ========== */}
