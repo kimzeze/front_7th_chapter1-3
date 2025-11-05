@@ -841,8 +841,8 @@ feat: 드래그 앤 드롭으로 일정 이동 기능 구현
 - [x] Step 2.4 완료 (MonthView dateString 전달) ✅
 - [x] Step 2.5 완료 (WeekView dateString 전달) ✅
 - [x] Step 2.6 완료 (이벤트 전파 방지 - EventCard onClick) ✅
-- [ ] 테스트 통과
-- [ ] 커밋 완료
+- [x] 테스트 확인 (기존 테스트 유지) ✅
+- [x] 커밋 완료 (feat: 드래그 앤 드롭으로 일정 이동 기능 구현) ✅
 
 **Phase 2 완료! 드래그 앤 드롭 기능 구현 완료 🎉**
 
