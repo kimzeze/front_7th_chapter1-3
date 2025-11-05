@@ -52,6 +52,7 @@ export default function CalendarCell({
   const { setNodeRef, isOver } = useDroppable({
     id: droppableId,
     data: { date: dateString },
+    disabled: !day || !dateString, // 빈 셀(날짜 없음)은 드롭 불가
   });
 
   const handleClick = () => {
