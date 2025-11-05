@@ -1,12 +1,15 @@
 import {
   DndContext,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
   MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { Box, Stack } from '@mui/material';
+import { Repeat } from '@mui/icons-material';
+import { Box, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
@@ -20,6 +23,7 @@ import { useEventOperations } from './hooks/useEventOperations.ts';
 import { useNotifications } from './hooks/useNotifications.ts';
 import { useRecurringEventOperations } from './hooks/useRecurringEventOperations.ts';
 import { useSearch } from './hooks/useSearch.ts';
+import { EVENT_BOX_STYLES } from './styles/eventBoxStyles';
 import { Event, EventForm } from './types.ts';
 import { findOverlappingEvents } from './utils/eventOverlap.ts';
 
@@ -44,6 +48,11 @@ function App() {
       },
     })
   );
+
+  /**
+   * 드래그 중인 일정 상태 (DragOverlay용)
+   */
+  const [activeEvent, setActiveEvent] = useState<Event | null>(null);
 
   // ============ 일정 입력 폼 상태 ============
   const {
@@ -243,6 +252,18 @@ function App() {
   };
 
   /**
+   * 드래그 시작 핸들러
+   *
+   * @param {DragStartEvent} event - 드래그 시작 이벤트
+   * @description
+   * 드래그가 시작되면 해당 일정을 activeEvent에 저장하여 DragOverlay에서 표시합니다.
+   */
+  const handleDragStart = (event: DragStartEvent) => {
+    const draggedEvent = events.find((e) => e.id === event.active.id);
+    setActiveEvent(draggedEvent || null);
+  };
+
+  /**
    * 드래그 앤 드롭 종료 핸들러
    *
    * @param {DragEndEvent} event - 드래그 종료 이벤트
@@ -257,6 +278,9 @@ function App() {
    */
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+
+    // 드래그 종료 시 activeEvent 초기화
+    setActiveEvent(null);
 
     // 드롭 영역이 없거나 같은 위치에 드롭한 경우 무시
     if (!over || active.id === over.id) {
@@ -400,7 +424,7 @@ function App() {
 
   // ============ 메인 UI 렌더링 ============
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
         <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
           {/* ========== 좌측: 일정 입력 폼 ========== */}
@@ -485,6 +509,30 @@ function App() {
           onClose={(index) => setNotifications((prev) => prev.filter((_, i) => i !== index))}
         />
       </Box>
+
+      {/* ========== 드래그 오버레이 (드래그 중 표시) ========== */}
+      <DragOverlay>
+        {activeEvent ? (
+          <Box
+            sx={{
+              ...EVENT_BOX_STYLES.common,
+              ...EVENT_BOX_STYLES.normal,
+              cursor: 'grabbing',
+              opacity: 0.8,
+              boxShadow: 3,
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              {/* 반복 일정 아이콘 */}
+              {activeEvent.repeat.type !== 'none' && <Repeat fontSize="small" />}
+
+              <Typography variant="caption" noWrap sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
+                {activeEvent.title}
+              </Typography>
+            </Stack>
+          </Box>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }
