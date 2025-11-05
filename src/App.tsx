@@ -279,11 +279,9 @@ function App() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    // 드래그 종료 시 activeEvent 초기화
-    setActiveEvent(null);
-
     // 드롭 영역이 없거나 같은 위치에 드롭한 경우 무시
     if (!over || active.id === over.id) {
+      setActiveEvent(null);
       return;
     }
 
@@ -296,11 +294,13 @@ function App() {
       const targetEvent = events.find((e) => e.id === eventId);
       if (!targetEvent) {
         console.error('일정을 찾을 수 없습니다:', eventId);
+        setActiveEvent(null);
         return;
       }
 
       // 날짜가 변경되지 않은 경우 무시
       if (targetEvent.date === newDate) {
+        setActiveEvent(null);
         return;
       }
 
@@ -326,6 +326,9 @@ function App() {
     } catch (error) {
       console.error('일정 이동 실패:', error);
       enqueueSnackbar('일정 이동에 실패했습니다', { variant: 'error' });
+    } finally {
+      // 성공/실패 여부와 관계없이 드래그 종료 시 activeEvent 초기화
+      setActiveEvent(null);
     }
   };
 
@@ -511,7 +514,7 @@ function App() {
       </Box>
 
       {/* ========== 드래그 오버레이 (드래그 중 표시) ========== */}
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeEvent ? (
           <Box
             sx={{

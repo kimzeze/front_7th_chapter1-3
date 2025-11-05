@@ -1,5 +1,4 @@
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { Notifications, Repeat } from '@mui/icons-material';
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
@@ -57,16 +56,15 @@ export default function EventCard({ event, isNotified }: EventCardProps) {
   const isRepeating = event.repeat.type !== 'none';
 
   // @dnd-kit useDraggable hook
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: event.id,
     data: { event }, // 드래그 중인 일정 데이터 전달
   });
 
-  // 드래그 중 transform 스타일 적용
+  // 드래그 중 스타일 적용 (DragOverlay 사용 시 transform 불필요)
   const style = {
-    transform: CSS.Translate.toString(transform),
     opacity: isDragging ? 0.5 : 1,
-    cursor: 'move',
+    cursor: isDragging ? 'grabbing' : 'move',
   };
 
   return (
