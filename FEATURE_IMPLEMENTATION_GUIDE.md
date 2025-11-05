@@ -828,19 +828,23 @@ feat: 드래그 앤 드롭으로 일정 이동 기능 구현
 - [x] Step 1.5 완료 (WeekView 처리) ✅
 - [x] Step 1.6 완료 (스타일 개선) ✅
 - [x] 테스트 확인 (기존 테스트 통과, 네트워크 에러는 기존 이슈) ✅
-- [ ] 커밋 완료
+- [x] 커밋 완료 (feat: 날짜 클릭으로 일정 생성 기능 구현) ✅
+
+**Phase 1 완료! 🎉**
 
 ### Phase 2: D&D
 
-- [ ] 패키지 설치 (@dnd-kit/core, @dnd-kit/utilities)
-- [ ] Step 2.1 완료 (DndContext 설정)
-- [ ] Step 2.2 완료 (EventCard Draggable)
-- [ ] Step 2.3 완료 (CalendarCell Droppable)
-- [ ] Step 2.4 완료 (MonthView currentDate)
-- [ ] Step 2.5 완료 (WeekView currentDate)
-- [ ] Step 2.6 완료 (이벤트 전파 방지)
+- [x] 패키지 설치 (@dnd-kit/core, @dnd-kit/utilities) ✅
+- [x] Step 2.1 완료 (DndContext 설정, sensors, handleDragEnd) ✅
+- [x] Step 2.2 완료 (EventCard Draggable - useDraggable) ✅
+- [x] Step 2.3 완료 (CalendarCell Droppable - useDroppable) ✅
+- [x] Step 2.4 완료 (MonthView dateString 전달) ✅
+- [x] Step 2.5 완료 (WeekView dateString 전달) ✅
+- [x] Step 2.6 완료 (이벤트 전파 방지 - EventCard onClick) ✅
 - [ ] 테스트 통과
 - [ ] 커밋 완료
+
+**Phase 2 완료! 드래그 앤 드롭 기능 구현 완료 🎉**
 
 ---
 

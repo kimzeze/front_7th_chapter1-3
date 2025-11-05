@@ -1,6 +1,7 @@
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { Notifications, Repeat } from '@mui/icons-material';
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
-import { DragEvent } from 'react';
 
 import { EVENT_BOX_STYLES } from '../../styles/eventBoxStyles';
 import { Event, RepeatType } from '../../types';
@@ -33,10 +34,6 @@ interface EventCardProps {
   event: Event;
   /** 알림이 발생한 일정 여부 (빨간색 강조) */
   isNotified: boolean;
-  /** 드래그 시작 핸들러 (D&D 기능) */
-  onDragStart?: (e: DragEvent<HTMLDivElement>) => void;
-  /** 드래그 종료 핸들러 (D&D 기능) */
-  onDragEnd?: (e: DragEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -45,7 +42,7 @@ interface EventCardProps {
  * @description
  * - 알림 상태에 따른 시각적 표현 (빨간색/회색)
  * - 반복 일정 아이콘 및 툴팁 표시
- * - 드래그 앤 드롭 지원
+ * - @dnd-kit을 사용한 드래그 앤 드롭 지원
  * - 긴 제목은 말줄임표 처리
  *
  * @example
@@ -53,23 +50,36 @@ interface EventCardProps {
  * <EventCard
  *   event={event}
  *   isNotified={notifiedEvents.includes(event.id)}
- *   onDragStart={handleDragStart}
  * />
  * ```
  */
-export default function EventCard({ event, isNotified, onDragStart, onDragEnd }: EventCardProps) {
+export default function EventCard({ event, isNotified }: EventCardProps) {
   const isRepeating = event.repeat.type !== 'none';
+
+  // @dnd-kit useDraggable hook
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: event.id,
+    data: { event }, // 드래그 중인 일정 데이터 전달
+  });
+
+  // 드래그 중 transform 스타일 적용
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'move',
+  };
 
   return (
     <Box
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       data-testid={`event-card-${event.id}`}
-      draggable={!!onDragStart}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
+      onClick={(e) => e.stopPropagation()} // 이벤트 전파 방지 (날짜 클릭과 충돌 방지)
       sx={{
         ...EVENT_BOX_STYLES.common,
         ...(isNotified ? EVENT_BOX_STYLES.notified : EVENT_BOX_STYLES.normal),
-        cursor: onDragStart ? 'move' : 'default',
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center">

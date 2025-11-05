@@ -1,3 +1,11 @@
+import {
+  DndContext,
+  DragEndEvent,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { Box, Stack } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
@@ -16,6 +24,28 @@ import { Event, EventForm } from './types.ts';
 import { findOverlappingEvents } from './utils/eventOverlap.ts';
 
 function App() {
+  // ============ 드래그 앤 드롭 센서 설정 ============
+  /**
+   * 드래그 앤 드롭 센서 구성
+   * @description
+   * - MouseSensor: 8px 이동 시 드래그 시작 (클릭과 구분)
+   * - TouchSensor: 200ms 지연 + 5px 허용 오차로 터치 시작
+   */
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8, // 8px 이동해야 드래그 시작 (클릭과 구분)
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
+    })
+  );
+
+  // ============ 일정 입력 폼 상태 ============
   const {
     title,
     setTitle,
@@ -213,6 +243,53 @@ function App() {
   };
 
   /**
+   * 드래그 앤 드롭 종료 핸들러
+   *
+   * @param {DragEndEvent} event - 드래그 종료 이벤트
+   * @description
+   * 일정 카드를 다른 날짜로 드래그했을 때 일정의 날짜를 업데이트합니다.
+   * active.id: 드래그된 일정 ID, over.id: 드롭된 날짜 문자열 (YYYY-MM-DD)
+   */
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    // 드롭 영역이 없거나 같은 위치에 드롭한 경우 무시
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    try {
+      // active.id는 일정 ID (string), over.id는 날짜 문자열 (YYYY-MM-DD)
+      const eventId = active.id as string;
+      const newDate = over.id as string;
+
+      // 드래그된 일정 찾기
+      const targetEvent = events.find((e) => e.id === eventId);
+      if (!targetEvent) {
+        console.error('일정을 찾을 수 없습니다:', eventId);
+        return;
+      }
+
+      // 날짜가 변경되지 않은 경우 무시
+      if (targetEvent.date === newDate) {
+        return;
+      }
+
+      // 일정 날짜 업데이트
+      const updatedEvent: EventForm = {
+        ...targetEvent,
+        date: newDate,
+      };
+
+      await saveEvent(updatedEvent);
+      enqueueSnackbar('일정이 이동되었습니다', { variant: 'success' });
+    } catch (error) {
+      console.error('일정 이동 실패:', error);
+      enqueueSnackbar('일정 이동에 실패했습니다', { variant: 'error' });
+    }
+  };
+
+  /**
    * 일정 추가 또는 수정 처리
    *
    * @description
@@ -307,90 +384,92 @@ function App() {
 
   // ============ 메인 UI 렌더링 ============
   return (
-    <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
-      <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
-        {/* ========== 좌측: 일정 입력 폼 ========== */}
-        <EventFormComponent
-          isEditing={!!editingEvent}
-          title={title}
-          onTitleChange={setTitle}
-          date={date}
-          onDateChange={setDate}
-          startTime={startTime}
-          onStartTimeChange={handleStartTimeChange}
-          endTime={endTime}
-          onEndTimeChange={handleEndTimeChange}
-          description={description}
-          onDescriptionChange={setDescription}
-          location={location}
-          onLocationChange={setLocation}
-          category={category}
-          onCategoryChange={setCategory}
-          isRepeating={isRepeating}
-          onIsRepeatingChange={setIsRepeating}
-          repeatType={repeatType}
-          onRepeatTypeChange={setRepeatType}
-          repeatInterval={repeatInterval}
-          onRepeatIntervalChange={setRepeatInterval}
-          repeatEndDate={repeatEndDate}
-          onRepeatEndDateChange={setRepeatEndDate}
-          notificationTime={notificationTime}
-          onNotificationTimeChange={setNotificationTime}
-          startTimeError={startTimeError}
-          endTimeError={endTimeError}
-          onSubmit={addOrUpdateEvent}
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
+        <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
+          {/* ========== 좌측: 일정 입력 폼 ========== */}
+          <EventFormComponent
+            isEditing={!!editingEvent}
+            title={title}
+            onTitleChange={setTitle}
+            date={date}
+            onDateChange={setDate}
+            startTime={startTime}
+            onStartTimeChange={handleStartTimeChange}
+            endTime={endTime}
+            onEndTimeChange={handleEndTimeChange}
+            description={description}
+            onDescriptionChange={setDescription}
+            location={location}
+            onLocationChange={setLocation}
+            category={category}
+            onCategoryChange={setCategory}
+            isRepeating={isRepeating}
+            onIsRepeatingChange={setIsRepeating}
+            repeatType={repeatType}
+            onRepeatTypeChange={setRepeatType}
+            repeatInterval={repeatInterval}
+            onRepeatIntervalChange={setRepeatInterval}
+            repeatEndDate={repeatEndDate}
+            onRepeatEndDateChange={setRepeatEndDate}
+            notificationTime={notificationTime}
+            onNotificationTimeChange={setNotificationTime}
+            startTimeError={startTimeError}
+            endTimeError={endTimeError}
+            onSubmit={addOrUpdateEvent}
+          />
+
+          {/* ========== 중앙: 캘린더 뷰 ========== */}
+          <CalendarView
+            view={view}
+            onViewChange={setView}
+            currentDate={currentDate}
+            onNavigate={navigate}
+            events={filteredEvents}
+            notifiedEventIds={notifiedEvents}
+            holidays={holidays}
+            onDateClick={handleDateClick}
+          />
+
+          {/* ========== 우측: 일정 검색 및 목록 ========== */}
+          <EventList
+            events={filteredEvents}
+            notifiedEventIds={notifiedEvents}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onEditEvent={handleEditEvent}
+            onDeleteEvent={handleDeleteEvent}
+          />
+        </Stack>
+
+        {/* ========== 일정 겹침 경고 다이얼로그 ========== */}
+        <OverlapDialog
+          open={isOverlapDialogOpen}
+          onClose={() => setIsOverlapDialogOpen(false)}
+          overlappingEvents={overlappingEvents}
+          onConfirm={handleConfirmOverlap}
         />
 
-        {/* ========== 중앙: 캘린더 뷰 ========== */}
-        <CalendarView
-          view={view}
-          onViewChange={setView}
-          currentDate={currentDate}
-          onNavigate={navigate}
-          events={filteredEvents}
-          notifiedEventIds={notifiedEvents}
-          holidays={holidays}
-          onDateClick={handleDateClick}
+        {/* ========== 반복 일정 수정/삭제 확인 다이얼로그 ========== */}
+        <RecurringEventDialog
+          open={isRecurringDialogOpen}
+          onClose={() => {
+            setIsRecurringDialogOpen(false);
+            setPendingRecurringEdit(null);
+            setPendingRecurringDelete(null);
+          }}
+          onConfirm={handleRecurringConfirm}
+          event={recurringDialogMode === 'edit' ? pendingRecurringEdit : pendingRecurringDelete}
+          mode={recurringDialogMode}
         />
 
-        {/* ========== 우측: 일정 검색 및 목록 ========== */}
-        <EventList
-          events={filteredEvents}
-          notifiedEventIds={notifiedEvents}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onEditEvent={handleEditEvent}
-          onDeleteEvent={handleDeleteEvent}
+        {/* ========== 알림 토스트 영역 (화면 우측 상단 고정) ========== */}
+        <NotificationToast
+          notifications={notifications}
+          onClose={(index) => setNotifications((prev) => prev.filter((_, i) => i !== index))}
         />
-      </Stack>
-
-      {/* ========== 일정 겹침 경고 다이얼로그 ========== */}
-      <OverlapDialog
-        open={isOverlapDialogOpen}
-        onClose={() => setIsOverlapDialogOpen(false)}
-        overlappingEvents={overlappingEvents}
-        onConfirm={handleConfirmOverlap}
-      />
-
-      {/* ========== 반복 일정 수정/삭제 확인 다이얼로그 ========== */}
-      <RecurringEventDialog
-        open={isRecurringDialogOpen}
-        onClose={() => {
-          setIsRecurringDialogOpen(false);
-          setPendingRecurringEdit(null);
-          setPendingRecurringDelete(null);
-        }}
-        onConfirm={handleRecurringConfirm}
-        event={recurringDialogMode === 'edit' ? pendingRecurringEdit : pendingRecurringDelete}
-        mode={recurringDialogMode}
-      />
-
-      {/* ========== 알림 토스트 영역 (화면 우측 상단 고정) ========== */}
-      <NotificationToast
-        notifications={notifications}
-        onClose={(index) => setNotifications((prev) => prev.filter((_, i) => i !== index))}
-      />
-    </Box>
+      </Box>
+    </DndContext>
   );
 }
 

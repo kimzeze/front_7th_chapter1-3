@@ -84,6 +84,7 @@ export default function MonthView({
                     <CalendarCell
                       key={dayIndex}
                       day={day}
+                      dateString={dateString}
                       events={eventsForDay}
                       notifiedEventIds={notifiedEventIds}
                       holiday={holiday}

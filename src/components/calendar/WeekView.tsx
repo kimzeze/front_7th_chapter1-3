@@ -78,15 +78,21 @@ export default function WeekView({
           </TableHead>
           <TableBody>
             <TableRow>
-              {weekDates.map((date) => (
-                <CalendarCell
-                  key={date.toISOString()}
-                  day={date.getDate()}
-                  events={getEventsForDate(date)}
-                  notifiedEventIds={notifiedEventIds}
-                  onClick={() => onDateClick?.(date)}
-                />
-              ))}
+              {weekDates.map((date) => {
+                // YYYY-MM-DD 형식으로 날짜 문자열 생성
+                const dateString = date.toISOString().split('T')[0];
+
+                return (
+                  <CalendarCell
+                    key={date.toISOString()}
+                    day={date.getDate()}
+                    dateString={dateString}
+                    events={getEventsForDate(date)}
+                    notifiedEventIds={notifiedEventIds}
+                    onClick={() => onDateClick?.(date)}
+                  />
+                );
+              })}
             </TableRow>
           </TableBody>
         </Table>
