@@ -249,6 +249,11 @@ function App() {
    * @description
    * 일정 카드를 다른 날짜로 드래그했을 때 일정의 날짜를 업데이트합니다.
    * active.id: 드래그된 일정 ID, over.id: 드롭된 날짜 문자열 (YYYY-MM-DD)
+   *
+   * @note
+   * saveEvent() 대신 직접 PUT 요청을 사용합니다.
+   * saveEvent()는 editing 상태에 따라 POST/PUT을 결정하는데,
+   * 드래그 시점에는 editingEvent가 null이므로 항상 POST(생성)가 되어 일정이 복제되는 문제가 있습니다.
    */
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -275,13 +280,24 @@ function App() {
         return;
       }
 
-      // 일정 날짜 업데이트
-      const updatedEvent: EventForm = {
+      // 일정 날짜 업데이트 - 직접 PUT 요청
+      const updatedEvent = {
         ...targetEvent,
         date: newDate,
       };
 
-      await saveEvent(updatedEvent);
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedEvent),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update event');
+      }
+
+      // 이벤트 목록 새로고침
+      await fetchEvents();
       enqueueSnackbar('일정이 이동되었습니다', { variant: 'success' });
     } catch (error) {
       console.error('일정 이동 실패:', error);
