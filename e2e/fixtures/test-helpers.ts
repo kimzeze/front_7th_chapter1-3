@@ -100,14 +100,28 @@ export class EventFormHelper {
       await this.page.fill(EVENT_FORM_SELECTORS.location, location);
     }
 
-    // 카테고리
+    // 카테고리 (Material-UI Select)
     if (category !== undefined) {
-      await this.page.selectOption(EVENT_FORM_SELECTORS.category, category);
+      // MUI Select 클릭하여 드롭다운 열기
+      await this.page.click(EVENT_FORM_SELECTORS.category);
+      // 옵션 선택
+      await this.page.click(`li[role="option"]:has-text("${category}")`);
     }
 
-    // 알림 시간
+    // 알림 시간 (Material-UI Select)
     if (notificationTime !== undefined) {
-      await this.page.selectOption(EVENT_FORM_SELECTORS.notification, String(notificationTime));
+      // MUI Select 클릭하여 드롭다운 열기
+      await this.page.click(EVENT_FORM_SELECTORS.notification);
+      // 옵션 선택 - 알림 시간 레이블 매핑 필요
+      const notificationLabels: Record<number, string> = {
+        0: '알림 없음',
+        10: '10분 전',
+        30: '30분 전',
+        60: '1시간 전',
+        1440: '1일 전',
+      };
+      const label = notificationLabels[notificationTime] || '10분 전';
+      await this.page.click(`li[role="option"]:has-text("${label}")`);
     }
   }
 
@@ -126,9 +140,16 @@ export class EventFormHelper {
       await checkbox.check();
     }
 
-    // 반복 유형 선택
+    // 반복 유형 선택 (Material-UI Select)
     await this.page.click(EVENT_FORM_SELECTORS.repeatType);
-    await this.page.click(EVENT_FORM_SELECTORS.repeatTypeOption(repeatConfig.type));
+    // 옵션 레이블 매핑
+    const typeLabels = {
+      daily: '매일',
+      weekly: '매주',
+      monthly: '매월',
+      yearly: '매년',
+    };
+    await this.page.click(`li[role="option"]:has-text("${typeLabels[repeatConfig.type]}")`);
 
     // 반복 간격
     if (repeatConfig.interval !== undefined) {
