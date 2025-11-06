@@ -417,9 +417,14 @@ export class DragAndDropHelper {
     // 대상 셀 찾기 (data-date 속성 사용)
     const targetCell = this.page.locator(`[data-date="${targetDate}"]`).first();
 
-    // 셀이 보이는지 확인
+    // 셀이 보이는지 확인 및 스크롤
     await eventCard.waitFor({ state: 'visible', timeout: 5000 });
+    await eventCard.scrollIntoViewIfNeeded();
     await targetCell.waitFor({ state: 'visible', timeout: 5000 });
+    await targetCell.scrollIntoViewIfNeeded();
+
+    // 요소가 안정화될 때까지 대기
+    await this.page.waitForTimeout(300);
 
     // 요소의 위치 정보 가져오기
     const eventBox = await eventCard.boundingBox();
