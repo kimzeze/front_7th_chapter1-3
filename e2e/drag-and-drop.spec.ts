@@ -28,9 +28,7 @@ test.describe('드래그 앤 드롭', () => {
    * 1. 기본 드래그 앤 드롭
    */
   test.describe('기본 드래그 앤 드롭', () => {
-    test.skip('사용자가 일정을 다른 날짜로 드래그할 수 있다', async ({ page }) => {
-      // TODO: @dnd-kit 드래그 앤 드롭은 Playwright의 기본 dragTo로는 제대로 동작하지 않음
-      // pointer 이벤트를 직접 시뮬레이션하는 방법 필요
+    test('사용자가 일정을 다른 날짜로 드래그할 수 있다', async ({ page }) => {
       const helpers = createHelpers(page);
       const assert = createAssertions(page);
 
@@ -61,8 +59,7 @@ test.describe('드래그 앤 드롭', () => {
       await assert.eventList.expectEventVisible('드래그 테스트 일정');
     });
 
-    test.skip('드래그 후 일정 날짜가 업데이트된다', async ({ page }) => {
-      // TODO: @dnd-kit 드래그 앤 드롭은 Playwright의 기본 dragTo로는 제대로 동작하지 않음
+    test('드래그 후 일정 날짜가 업데이트된다', async ({ page }) => {
       const helpers = createHelpers(page);
       const assert = createAssertions(page);
 
@@ -90,8 +87,7 @@ test.describe('드래그 앤 드롭', () => {
       await assert.toast.expectToast('일정이 이동되었습니다');
     });
 
-    test.skip('드래그 후 변경사항이 즉시 반영된다', async ({ page }) => {
-      // TODO: @dnd-kit 드래그 앤 드롭은 Playwright의 기본 dragTo로는 제대로 동작하지 않음
+    test('드래그 후 변경사항이 즉시 반영된다', async ({ page }) => {
       const helpers = createHelpers(page);
       const assert = createAssertions(page);
 
@@ -135,9 +131,35 @@ test.describe('드래그 앤 드롭', () => {
    * 3. 드래그 취소
    */
   test.describe('드래그 취소', () => {
-    test.skip('같은 위치에 드롭하면 일정이 이동하지 않는다', async () => {
-      // TODO: 같은 위치 드롭 테스트는 드래그 앤 드롭 구현 방식에 따라 조정 필요
-      // 현재는 같은 날짜로 드래그하면 무시되지만, 테스트 방법 개선 필요
+    test('같은 위치에 드롭하면 일정이 이동하지 않는다', async ({ page }) => {
+      const helpers = createHelpers(page);
+      const assert = createAssertions(page);
+
+      // Given: 일정 생성
+      const today = DateHelper.today();
+      const eventData = EventFormFactory.create({
+        title: '드래그 취소 테스트',
+        date: today,
+        startTime: '10:00',
+        endTime: '11:00',
+      });
+
+      await helpers.eventForm.fillEventForm(eventData);
+      await helpers.eventForm.submitEvent();
+      await assert.toast.expectEventCreated();
+
+      // 페이지 새로고침하여 캘린더에 일정이 표시되도록 함
+      await helpers.navigation.reload();
+
+      // When: 같은 날짜로 드래그 (실제로는 드롭하지 않음)
+      // 같은 날짜로 드래그하면 handleDragEnd에서 early return하므로 토스트가 표시되지 않음
+      await helpers.dragAndDrop.dragEventToDate('드래그 취소 테스트', today);
+
+      // Then: 성공 메시지가 표시되지 않음 (같은 위치 드롭은 무시됨)
+      // 토스트가 표시되지 않는 것을 확인하기 위해 잠시 대기
+      await page.waitForTimeout(1000);
+      const toast = page.locator('text=일정이 이동되었습니다');
+      await expect(toast).not.toBeVisible();
     });
   });
 });

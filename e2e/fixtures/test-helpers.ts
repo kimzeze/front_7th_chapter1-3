@@ -408,7 +408,7 @@ export class DragAndDropHelper {
   /**
    * 일정을 다른 날짜로 드래그
    * @dnd-kit을 사용하는 드래그 앤 드롭은 pointer 이벤트를 사용하므로
-   * Playwright의 locator.dragTo()를 사용합니다.
+   * Playwright의 mouse API를 사용하여 pointer 이벤트를 직접 시뮬레이션합니다.
    */
   async dragEventToDate(eventTitle: string, targetDate: string) {
     // EventCard를 찾기 (data-testid 사용)
@@ -418,12 +418,35 @@ export class DragAndDropHelper {
     const targetCell = this.page.locator(`[data-date="${targetDate}"]`).first();
 
     // 셀이 보이는지 확인
+    await eventCard.waitFor({ state: 'visible', timeout: 5000 });
     await targetCell.waitFor({ state: 'visible', timeout: 5000 });
 
-    // @dnd-kit은 pointer 이벤트를 사용하므로 dragTo 사용
-    await eventCard.dragTo(targetCell, {
-      force: false, // 요소가 보여야 드래그 가능
-    });
+    // 요소의 위치 정보 가져오기
+    const eventBox = await eventCard.boundingBox();
+    const targetBox = await targetCell.boundingBox();
+
+    if (!eventBox || !targetBox) {
+      throw new Error('드래그 요소 또는 대상 요소를 찾을 수 없습니다');
+    }
+
+    // @dnd-kit은 pointer 이벤트를 사용하므로 mouse API로 직접 시뮬레이션
+    // 드래그 시작 위치 (이벤트 카드 중심)
+    const startX = eventBox.x + eventBox.width / 2;
+    const startY = eventBox.y + eventBox.height / 2;
+
+    // 드롭 위치 (대상 셀 중심)
+    const endX = targetBox.x + targetBox.width / 2;
+    const endY = targetBox.y + targetBox.height / 2;
+
+    // 드래그 시작: 마우스를 이벤트 카드 위로 이동하고 누름
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+
+    // 드래그 중: 대상 셀 위로 이동
+    await this.page.mouse.move(endX, endY, { steps: 10 });
+
+    // 드롭: 마우스 놓기
+    await this.page.mouse.up();
 
     // 드래그 완료 대기 (API 요청 완료 대기)
     await this.page.waitForTimeout(1500);
