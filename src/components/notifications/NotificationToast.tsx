@@ -51,4 +51,3 @@ export default function NotificationToast({ notifications, onClose }: Notificati
     </Stack>
   );
 }
-

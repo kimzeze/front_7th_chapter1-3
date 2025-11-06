@@ -37,4 +37,3 @@ export default function EventSearchInput({ value, onChange }: EventSearchInputPr
     </FormControl>
   );
 }
-

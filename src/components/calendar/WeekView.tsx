@@ -9,10 +9,10 @@ import {
   Typography,
 } from '@mui/material';
 
+import CalendarCell from './CalendarCell';
 import { WEEK_DAYS } from '../../constants';
 import { Event } from '../../types';
 import { formatWeek } from '../../utils/dateUtils';
-import CalendarCell from './CalendarCell';
 
 interface WeekViewProps {
   /** 현재 날짜 */
@@ -100,4 +100,3 @@ export default function WeekView({
     </Stack>
   );
 }
-

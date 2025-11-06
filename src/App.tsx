@@ -428,8 +428,8 @@ function App() {
   // ============ 메인 UI 렌더링 ============
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-    <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
-      <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
+      <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
+        <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
           {/* ========== 좌측: 일정 입력 폼 ========== */}
           <EventFormComponent
             isEditing={!!editingEvent}
@@ -494,17 +494,17 @@ function App() {
         />
 
         {/* ========== 반복 일정 수정/삭제 확인 다이얼로그 ========== */}
-      <RecurringEventDialog
-        open={isRecurringDialogOpen}
-        onClose={() => {
-          setIsRecurringDialogOpen(false);
-          setPendingRecurringEdit(null);
-          setPendingRecurringDelete(null);
-        }}
-        onConfirm={handleRecurringConfirm}
-        event={recurringDialogMode === 'edit' ? pendingRecurringEdit : pendingRecurringDelete}
-        mode={recurringDialogMode}
-      />
+        <RecurringEventDialog
+          open={isRecurringDialogOpen}
+          onClose={() => {
+            setIsRecurringDialogOpen(false);
+            setPendingRecurringEdit(null);
+            setPendingRecurringDelete(null);
+          }}
+          onConfirm={handleRecurringConfirm}
+          event={recurringDialogMode === 'edit' ? pendingRecurringEdit : pendingRecurringDelete}
+          mode={recurringDialogMode}
+        />
 
         {/* ========== 알림 토스트 영역 (화면 우측 상단 고정) ========== */}
         <NotificationToast
@@ -524,7 +524,7 @@ function App() {
               opacity: 0.8,
               boxShadow: 3,
             }}
-            >
+          >
             <Stack direction="row" spacing={1} alignItems="center">
               {/* 반복 일정 아이콘 */}
               {activeEvent.repeat.type !== 'none' && <Repeat fontSize="small" />}
@@ -532,8 +532,8 @@ function App() {
               <Typography variant="caption" noWrap sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
                 {activeEvent.title}
               </Typography>
-        </Stack>
-    </Box>
+            </Stack>
+          </Box>
         ) : null}
       </DragOverlay>
     </DndContext>

@@ -113,4 +113,3 @@ const RecurringEventDialog = ({
 };
 
 export default RecurringEventDialog;
-

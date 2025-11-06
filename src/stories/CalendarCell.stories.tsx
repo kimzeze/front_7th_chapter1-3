@@ -293,4 +293,3 @@ export const ComplexState: Story = {
     onClick: (day) => console.log('Date clicked:', day),
   },
 };
-
