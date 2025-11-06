@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import React from 'react';
 
 import RecurringEventDialog from '../components/dialogs/RecurringEventDialog';
 import { Event } from '../types';
@@ -45,7 +44,7 @@ const meta = {
       action: 'confirmed',
     },
   },
-} satisfies Meta<typeof RecurringEventDialog>;
+} as Meta<typeof RecurringEventDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -65,6 +64,23 @@ const baseEvent: Event = {
 };
 
 /**
+ * 닫힌 상태
+ *
+ * 다이얼로그가 닫혀있을 때의 상태입니다.
+ * 실제로는 null을 반환하여 렌더링되지 않습니다.
+ * Docs 탭에서 기본적으로 이 스토리가 표시됩니다.
+ */
+export const Closed: Story = {
+  args: {
+    open: false,
+    mode: 'edit',
+    event: baseEvent,
+    onClose: () => console.log('Dialog closed'),
+    onConfirm: (editSingleOnly) => console.log('Confirmed:', editSingleOnly),
+  },
+};
+
+/**
  * 열린 상태 - 수정 모드
  *
  * 반복 일정을 수정할 때 표시되는 다이얼로그입니다.
@@ -78,6 +94,12 @@ export const OpenedEditMode: Story = {
     event: baseEvent,
     onClose: () => console.log('Dialog closed'),
     onConfirm: (editSingleOnly) => console.log('Confirmed:', editSingleOnly),
+  },
+  parameters: {
+    // Docs에서 이 스토리는 제외 (모달이 문서를 가리지 않도록)
+    docs: {
+      disable: true,
+    },
   },
 };
 
@@ -96,21 +118,10 @@ export const OpenedDeleteMode: Story = {
     onClose: () => console.log('Dialog closed'),
     onConfirm: (editSingleOnly) => console.log('Confirmed:', editSingleOnly),
   },
-};
-
-/**
- * 닫힌 상태
- *
- * 다이얼로그가 닫혀있을 때의 상태입니다.
- * 실제로는 null을 반환하여 렌더링되지 않습니다.
- */
-export const Closed: Story = {
-  args: {
-    open: false,
-    mode: 'edit',
-    event: baseEvent,
-    onClose: () => console.log('Dialog closed'),
-    onConfirm: (editSingleOnly) => console.log('Confirmed:', editSingleOnly),
+  parameters: {
+    // Docs에서 이 스토리는 제외 (모달이 문서를 가리지 않도록)
+    docs: {
+      disable: true,
+    },
   },
 };
-
