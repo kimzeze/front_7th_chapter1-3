@@ -30,7 +30,7 @@ const meta = {
     (Story: React.ComponentType) => (
       // DndContext로 감싸서 드래그 기능이 동작하도록 설정
       <DndContext>
-        <div style={{ width: '200px', padding: '16px', backgroundColor: '#f5f5f5' }}>
+        <div style={{ width: '250px', padding: '16px', backgroundColor: '#f5f5f5' }}>
           <Story />
         </div>
       </DndContext>
@@ -200,12 +200,13 @@ export const DraggingState: Story = {
     event: baseEvent,
     isNotified: false,
   },
+  parameters: {
+    layout: 'centered',
+  },
   render: (args) => (
-    <div style={{ width: '200px', padding: '16px', backgroundColor: '#f5f5f5' }}>
-      {/* 드래그 중 상태를 시각적으로 표현 (opacity: 0.5) */}
-      <div style={{ opacity: 0.5, cursor: 'grabbing' }}>
-        <EventCard {...args} />
-      </div>
+    // meta decorator의 div를 활용하므로 여기서는 opacity만 적용
+    <div style={{ opacity: 0.5, cursor: 'grabbing' }}>
+      <EventCard {...args} />
     </div>
   ),
 };
@@ -222,17 +223,19 @@ export const VariousCategories: Story = {
     isNotified: false,
   },
   parameters: {
-    layout: 'padded', // centered 대신 padded로 변경하여 여러 카드가 잘 보이도록
+    layout: 'centered', // centered 유지 (시각적 회귀 테스트를 위한 일관된 레이아웃)
   },
   render: () => (
     // DndContext는 이미 meta decorator에 있으므로 중복 제거
     <div
       style={{
-        width: '220px',
+        width: '280px',
+        maxWidth: '100%',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
         padding: '16px',
+        backgroundColor: '#f5f5f5',
       }}
     >
       <EventCard event={{ ...baseEvent, title: '팀 회의', category: '업무' }} isNotified={false} />
