@@ -1,5 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { DndContext } from '@dnd-kit/core';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import React from 'react';
+
 import EventCard from '../components/calendar/EventCard';
 import { Event } from '../types';
 
@@ -25,7 +27,7 @@ const meta = {
   },
   tags: ['autodocs'],
   decorators: [
-    (Story) => (
+    (Story: React.ComponentType) => (
       // DndContext로 감싸서 드래그 기능이 동작하도록 설정
       <DndContext>
         <div style={{ width: '200px', padding: '16px', backgroundColor: '#f5f5f5' }}>
@@ -198,18 +200,14 @@ export const DraggingState: Story = {
     event: baseEvent,
     isNotified: false,
   },
-  decorators: [
-    (Story) => (
-      <DndContext>
-        <div style={{ width: '200px', padding: '16px', backgroundColor: '#f5f5f5' }}>
-          {/* 드래그 중 상태를 시각적으로 표현 */}
-          <div style={{ opacity: 0.5, cursor: 'grabbing' }}>
-            <Story />
-          </div>
-        </div>
-      </DndContext>
-    ),
-  ],
+  render: (args) => (
+    <div style={{ width: '200px', padding: '16px', backgroundColor: '#f5f5f5' }}>
+      {/* 드래그 중 상태를 시각적으로 표현 (opacity: 0.5) */}
+      <div style={{ opacity: 0.5, cursor: 'grabbing' }}>
+        <EventCard {...args} />
+      </div>
+    </div>
+  ),
 };
 
 /**
@@ -219,27 +217,37 @@ export const DraggingState: Story = {
  * 현재는 카테고리별 색상 구분이 없지만, 향후 추가 가능합니다.
  */
 export const VariousCategories: Story = {
+  args: {
+    event: baseEvent,
+    isNotified: false,
+  },
+  parameters: {
+    layout: 'padded', // centered 대신 padded로 변경하여 여러 카드가 잘 보이도록
+  },
   render: () => (
-    <DndContext>
-      <div style={{ width: '220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <EventCard
-          event={{ ...baseEvent, title: '팀 회의', category: '업무' }}
-          isNotified={false}
-        />
-        <EventCard
-          event={{ ...baseEvent, id: '2', title: '점심 약속', category: '개인' }}
-          isNotified={false}
-        />
-        <EventCard
-          event={{ ...baseEvent, id: '3', title: '헬스장', category: '운동' }}
-          isNotified={false}
-        />
-        <EventCard
-          event={{ ...baseEvent, id: '4', title: '가족 모임', category: '가족' }}
-          isNotified={true}
-        />
-      </div>
-    </DndContext>
+    // DndContext는 이미 meta decorator에 있으므로 중복 제거
+    <div
+      style={{
+        width: '220px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '16px',
+      }}
+    >
+      <EventCard event={{ ...baseEvent, title: '팀 회의', category: '업무' }} isNotified={false} />
+      <EventCard
+        event={{ ...baseEvent, id: '2', title: '점심 약속', category: '개인' }}
+        isNotified={false}
+      />
+      <EventCard
+        event={{ ...baseEvent, id: '3', title: '헬스장', category: '운동' }}
+        isNotified={false}
+      />
+      <EventCard
+        event={{ ...baseEvent, id: '4', title: '가족 모임', category: '가족' }}
+        isNotified={true}
+      />
+    </div>
   ),
 };
-
