@@ -10,3 +10,6 @@ node_modules
 /.allure/
 *storybook.log
 storybook-static
+
+# E2E test data
+src/__mocks__/response/e2e.json

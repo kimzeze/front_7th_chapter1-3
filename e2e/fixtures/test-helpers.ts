@@ -606,75 +606,31 @@ export class TestHelpers {
    * 테스트 시작 전 초기화
    */
   async setup() {
-    // API mocking - 빈 상태로 시작
-    let mockEvents: any[] = [];
-
-    // /api/events 엔드포인트 mocking (GET, POST)
-    await this.page.route('**/api/events', (route) => {
-      const method = route.request().method();
-
-      if (method === 'GET') {
-        // GET /api/events - 현재 mockEvents 반환
-        route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ events: mockEvents }),
-        });
-      } else if (method === 'POST') {
-        // POST /api/events - 일정 추가
-        const newEvent = route.request().postDataJSON();
-        newEvent.id = String(mockEvents.length + 1);
-        mockEvents.push(newEvent);
-        route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify(newEvent),
-        });
-      } else {
-        route.continue();
-      }
-    });
-
-    // /api/events/:id 엔드포인트 mocking (PUT, DELETE)
-    await this.page.route('**/api/events/*', (route) => {
-      const method = route.request().method();
-      const url = route.request().url();
-      const id = url.split('/').pop();
-
-      if (method === 'PUT') {
-        // PUT /api/events/:id - 일정 수정
-        const updatedEvent = route.request().postDataJSON();
-        const index = mockEvents.findIndex((e) => e.id === id);
-
-        if (index !== -1) {
-          mockEvents[index] = { ...mockEvents[index], ...updatedEvent };
-          route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(mockEvents[index]),
-          });
-        } else {
-          route.fulfill({ status: 404 });
-        }
-      } else if (method === 'DELETE') {
-        // DELETE /api/events/:id - 일정 삭제
-        const index = mockEvents.findIndex((e) => e.id === id);
-
-        if (index !== -1) {
-          mockEvents.splice(index, 1);
-          route.fulfill({ status: 204 });
-        } else {
-          route.fulfill({ status: 404 });
-        }
-      } else {
-        route.continue();
-      }
-    });
-
-    // Storage 초기화 후 페이지 이동
+    // 페이지 이동
     await this.page.goto('http://localhost:5173');
+
+    // Storage 초기화
     await this.navigation.clearAllStorage();
-    await this.page.reload(); // 깨끗한 상태로 재로드
+
+    // e2e.json 초기화: 모든 기존 일정 삭제
+    try {
+      const response = await this.page.request.get('http://localhost:3000/api/events');
+      if (response.ok()) {
+        const data = await response.json();
+        const events = data.events || [];
+
+        // 모든 일정 삭제
+        for (const event of events) {
+          await this.page.request.delete(`http://localhost:3000/api/events/${event.id}`);
+        }
+      }
+    } catch (error) {
+      // 서버가 아직 준비되지 않았거나 초기 상태
+      console.warn('Failed to initialize e2e.json:', error);
+    }
+
+    // 페이지 리로드하여 깨끗한 상태로 시작
+    await this.page.reload();
     await this.page.waitForLoadState('networkidle');
   }
 

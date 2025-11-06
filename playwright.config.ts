@@ -45,7 +45,7 @@ export default defineConfig({
 
   /* 개발 서버 설정 */
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm dev:e2e',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
