@@ -65,6 +65,7 @@ export default function CalendarCell({
     <TableCell
       ref={setNodeRef}
       data-testid={day ? `calendar-cell-${day}` : 'calendar-cell-empty'}
+      data-date={dateString}
       onClick={handleClick}
       sx={{
         height: '120px',

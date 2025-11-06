@@ -275,14 +275,31 @@ export class EventListHelper {
    * @description 일정의 Edit 버튼을 클릭하여 수정 모드로 전환
    */
   async clickEvent(title: string) {
-    // 일정 제목이 있는 EventItem 찾기
-    const eventItem = this.page.locator(`[data-testid^="event-item-"]:has-text("${title}")`);
+    // 일정 제목이 있는 EventItem 찾기 (첫 번째 일정만 선택)
+    const eventItem = this.page
+      .locator(`[data-testid^="event-item-"]:has-text("${title}")`)
+      .first();
 
-    // Edit 버튼 클릭 (aria-label 사용)
-    await eventItem.locator('[aria-label="Edit event"]').click();
+    // Edit 버튼 클릭 (aria-label 사용, 첫 번째 버튼만 선택)
+    await eventItem.locator('[aria-label="Edit event"]').first().click();
 
-    // 폼 업데이트 대기
-    await this.page.waitForTimeout(500);
+    // 폼이 수정 모드로 전환되고 데이터가 채워질 때까지 대기
+    await this.page.waitForSelector('text=일정 수정', { timeout: 5000 });
+
+    // 폼 필드가 채워질 때까지 추가 대기 (제목 필드가 채워지는지 확인)
+    try {
+      await this.page.waitForFunction(
+        (selector) => {
+          const input = document.querySelector(selector) as HTMLInputElement;
+          return input && input.value.length > 0;
+        },
+        EVENT_FORM_SELECTORS.title,
+        { timeout: 3000 }
+      );
+    } catch {
+      // 폼이 채워지지 않았을 수 있으므로 추가 대기
+      await this.page.waitForTimeout(500);
+    }
   }
 
   /**
@@ -363,14 +380,22 @@ export class CalendarHelper {
    * 주간 뷰로 전환
    */
   async switchToWeekView() {
-    await this.page.click('button:has-text("Week")');
+    // Select 드롭다운 클릭
+    await this.page.click('[aria-label="뷰 타입 선택"]');
+    // Week 옵션 선택
+    await this.page.click('[aria-label="week-option"]');
+    await this.page.waitForTimeout(300);
   }
 
   /**
    * 월간 뷰로 전환
    */
   async switchToMonthView() {
-    await this.page.click('button:has-text("Month")');
+    // Select 드롭다운 클릭
+    await this.page.click('[aria-label="뷰 타입 선택"]');
+    // Month 옵션 선택
+    await this.page.click('[aria-label="month-option"]');
+    await this.page.waitForTimeout(300);
   }
 }
 
@@ -382,37 +407,26 @@ export class DragAndDropHelper {
 
   /**
    * 일정을 다른 날짜로 드래그
+   * @dnd-kit을 사용하는 드래그 앤 드롭은 pointer 이벤트를 사용하므로
+   * Playwright의 locator.dragTo()를 사용합니다.
    */
   async dragEventToDate(eventTitle: string, targetDate: string) {
-    const source = this.page.locator(`text=${eventTitle}`).first();
-    const target = this.page.locator(`[data-date="${targetDate}"]`);
+    // EventCard를 찾기 (data-testid 사용)
+    const eventCard = this.page.locator(`[data-testid^="event-card-"]:has-text("${eventTitle}")`).first();
+    
+    // 대상 셀 찾기 (data-date 속성 사용)
+    const targetCell = this.page.locator(`[data-date="${targetDate}"]`).first();
 
-    const sourceBox = await source.boundingBox();
-    const targetBox = await target.boundingBox();
+    // 셀이 보이는지 확인
+    await targetCell.waitFor({ state: 'visible', timeout: 5000 });
 
-    if (!sourceBox || !targetBox) {
-      throw new Error('Source or target element not found');
-    }
+    // @dnd-kit은 pointer 이벤트를 사용하므로 dragTo 사용
+    await eventCard.dragTo(targetCell, {
+      force: false, // 요소가 보여야 드래그 가능
+    });
 
-    // 드래그 시작
-    await this.page.mouse.move(
-      sourceBox.x + sourceBox.width / 2,
-      sourceBox.y + sourceBox.height / 2
-    );
-    await this.page.mouse.down();
-
-    // 드래그 중 (중간 지점 거치기)
-    await this.page.mouse.move(
-      targetBox.x + targetBox.width / 2,
-      targetBox.y + targetBox.height / 2,
-      { steps: 10 }
-    );
-
-    // 드롭
-    await this.page.mouse.up();
-
-    // 애니메이션 대기
-    await this.page.waitForTimeout(500);
+    // 드래그 완료 대기 (API 요청 완료 대기)
+    await this.page.waitForTimeout(1500);
   }
 
   /**
@@ -531,12 +545,12 @@ export class DialogHelper {
 
   /**
    * 반복 일정 수정/삭제 옵션 선택
+   * @param option - 'this': 단일 일정만 (예 버튼), 'all': 모든 일정 (아니오 버튼)
    */
-  async selectRepeatOption(option: 'this' | 'future' | 'all') {
+  async selectRepeatOption(option: 'this' | 'all') {
     const buttonText = {
-      this: '이 일정만',
-      future: '앞으로 모든 일정',
-      all: '모든 일정',
+      this: '예', // 단일 일정만
+      all: '아니오', // 모든 일정
     };
 
     await this.page.click(`button:has-text("${buttonText[option]}")`);

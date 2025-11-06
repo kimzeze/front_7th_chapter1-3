@@ -1,11 +1,7 @@
 import { Page, expect } from '@playwright/test';
+
+import { EVENT_FORM_SELECTORS, TOAST_SELECTORS, DIALOG_SELECTORS, SELECTORS } from './selectors';
 import type { EventForm } from '../../src/types';
-import {
-  EVENT_FORM_SELECTORS,
-  TOAST_SELECTORS,
-  DIALOG_SELECTORS,
-  SELECTORS,
-} from './selectors';
 
 /**
  * E2E 테스트 공통 검증 로직
@@ -51,9 +47,7 @@ export class EventFormAssertions {
     }
 
     if (expected.location !== undefined) {
-      await expect(this.page.locator(EVENT_FORM_SELECTORS.location)).toHaveValue(
-        expected.location
-      );
+      await expect(this.page.locator(EVENT_FORM_SELECTORS.location)).toHaveValue(expected.location);
     }
 
     if (expected.category !== undefined) {

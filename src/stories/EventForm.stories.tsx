@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ChangeEvent, useState } from 'react';
 
-import { CATEGORIES, NOTIFICATION_OPTIONS } from '../constants';
 import EventForm from '../components/event/EventForm';
+import { CATEGORIES, NOTIFICATION_OPTIONS } from '../constants';
 import { RepeatType } from '../types';
 
 /**
@@ -259,96 +259,111 @@ export const ValidationError: Story = {
 };
 
 /**
+ * 인터랙티브 폼 컴포넌트
+ *
+ * 실제로 입력할 수 있는 인터랙티브 폼입니다.
+ * 모든 필드를 변경할 수 있습니다.
+ */
+function InteractiveForm() {
+  const [isEditing] = useState(false);
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(CATEGORIES[0]);
+  const [isRepeating, setIsRepeating] = useState(false);
+  const [repeatType, setRepeatType] = useState<RepeatType>('none');
+  const [repeatInterval, setRepeatInterval] = useState<number>(1);
+  const [repeatEndDate, setRepeatEndDate] = useState('');
+  const [notificationTime, setNotificationTime] = useState<number>(NOTIFICATION_OPTIONS[0].value);
+  const [startTimeError, setStartTimeError] = useState<string | null>(null);
+  const [endTimeError, setEndTimeError] = useState<string | null>(null);
+
+  const handleStartTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setStartTime(e.target.value);
+    // 간단한 검증 (실제로는 getTimeErrorMessage 사용)
+    if (e.target.value && endTime && e.target.value >= endTime) {
+      setStartTimeError('시작 시간은 종료 시간보다 빨라야 합니다.');
+    } else {
+      setStartTimeError(null);
+    }
+  };
+
+  const handleEndTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEndTime(e.target.value);
+    // 간단한 검증
+    if (e.target.value && startTime && e.target.value <= startTime) {
+      setEndTimeError('종료 시간은 시작 시간보다 늦어야 합니다.');
+    } else {
+      setEndTimeError(null);
+    }
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value as (typeof CATEGORIES)[number]);
+  };
+
+  const handleNotificationTimeChange = (value: number) => {
+    setNotificationTime(value);
+  };
+
+  return (
+    <EventForm
+      isEditing={isEditing}
+      title={title}
+      onTitleChange={setTitle}
+      date={date}
+      onDateChange={setDate}
+      startTime={startTime}
+      onStartTimeChange={handleStartTimeChange}
+      endTime={endTime}
+      onEndTimeChange={handleEndTimeChange}
+      description={description}
+      onDescriptionChange={setDescription}
+      location={location}
+      onLocationChange={setLocation}
+      category={category}
+      onCategoryChange={handleCategoryChange}
+      isRepeating={isRepeating}
+      onIsRepeatingChange={setIsRepeating}
+      repeatType={repeatType}
+      onRepeatTypeChange={setRepeatType}
+      repeatInterval={repeatInterval}
+      onRepeatIntervalChange={setRepeatInterval}
+      repeatEndDate={repeatEndDate}
+      onRepeatEndDateChange={setRepeatEndDate}
+      notificationTime={notificationTime}
+      onNotificationTimeChange={handleNotificationTimeChange}
+      startTimeError={startTimeError}
+      endTimeError={endTimeError}
+      onSubmit={() => {
+        console.log('Form submitted:', {
+          title,
+          date,
+          startTime,
+          endTime,
+          description,
+          location,
+          category,
+          isRepeating,
+          repeatType,
+          repeatInterval,
+          repeatEndDate,
+          notificationTime,
+        });
+      }}
+    />
+  );
+}
+
+/**
  * 인터랙티브 폼
  *
  * 실제로 입력할 수 있는 인터랙티브 폼입니다.
  * 모든 필드를 변경할 수 있습니다.
  */
 export const Interactive: Story = {
-  render: () => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [title, setTitle] = useState('');
-    const [date, setDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
-    const [description, setDescription] = useState('');
-    const [location, setLocation] = useState('');
-    const [category, setCategory] = useState(CATEGORIES[0]);
-    const [isRepeating, setIsRepeating] = useState(false);
-    const [repeatType, setRepeatType] = useState<RepeatType>('none');
-    const [repeatInterval, setRepeatInterval] = useState(1);
-    const [repeatEndDate, setRepeatEndDate] = useState('');
-    const [notificationTime, setNotificationTime] = useState(NOTIFICATION_OPTIONS[0].value);
-    const [startTimeError, setStartTimeError] = useState<string | null>(null);
-    const [endTimeError, setEndTimeError] = useState<string | null>(null);
-
-    const handleStartTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setStartTime(e.target.value);
-      // 간단한 검증 (실제로는 getTimeErrorMessage 사용)
-      if (e.target.value && endTime && e.target.value >= endTime) {
-        setStartTimeError('시작 시간은 종료 시간보다 빨라야 합니다.');
-      } else {
-        setStartTimeError(null);
-      }
-    };
-
-    const handleEndTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setEndTime(e.target.value);
-      // 간단한 검증
-      if (e.target.value && startTime && e.target.value <= startTime) {
-        setEndTimeError('종료 시간은 시작 시간보다 늦어야 합니다.');
-      } else {
-        setEndTimeError(null);
-      }
-    };
-
-    return (
-      <EventForm
-        isEditing={isEditing}
-        title={title}
-        onTitleChange={setTitle}
-        date={date}
-        onDateChange={setDate}
-        startTime={startTime}
-        onStartTimeChange={handleStartTimeChange}
-        endTime={endTime}
-        onEndTimeChange={handleEndTimeChange}
-        description={description}
-        onDescriptionChange={setDescription}
-        location={location}
-        onLocationChange={setLocation}
-        category={category}
-        onCategoryChange={setCategory}
-        isRepeating={isRepeating}
-        onIsRepeatingChange={setIsRepeating}
-        repeatType={repeatType}
-        onRepeatTypeChange={setRepeatType}
-        repeatInterval={repeatInterval}
-        onRepeatIntervalChange={setRepeatInterval}
-        repeatEndDate={repeatEndDate}
-        onRepeatEndDateChange={setRepeatEndDate}
-        notificationTime={notificationTime}
-        onNotificationTimeChange={setNotificationTime}
-        startTimeError={startTimeError}
-        endTimeError={endTimeError}
-        onSubmit={() => {
-          console.log('Form submitted:', {
-            title,
-            date,
-            startTime,
-            endTime,
-            description,
-            location,
-            category,
-            isRepeating,
-            repeatType,
-            repeatInterval,
-            repeatEndDate,
-            notificationTime,
-          });
-        }}
-      />
-    );
-  },
+  render: () => <InteractiveForm />,
 };
-

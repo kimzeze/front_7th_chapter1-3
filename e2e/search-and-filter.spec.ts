@@ -135,7 +135,6 @@ test.describe('검색 및 필터링', () => {
       await assert.eventList.expectEventVisible('운동');
       await assert.eventList.expectEventVisible('프로젝트 회의');
     });
-
   });
 
   /**

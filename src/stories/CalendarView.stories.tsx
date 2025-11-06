@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DndContext } from '@dnd-kit/core';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import CalendarView from '../components/calendar/CalendarView';
 import { Event } from '../types';
@@ -271,4 +271,3 @@ export const MonthViewWithRepeatingEvents: Story = {
     onDateClick: (date) => console.log('Date clicked:', date),
   },
 };
-
