@@ -23,20 +23,26 @@
 
 ### 해결한 주요 이슈
 
-1. **API mocking 구현**
-   - Playwright `route()`로 `/api/events` 엔드포인트를 intercept
-   - 각 테스트마다 빈 상태로 시작하여 독립적인 테스트 환경 구성
-   - GET/POST/PUT/DELETE 모두 mocking하여 완전한 CRUD 지원
+1. **실제 API 사용 (Integration Test)**
+   - `TEST_ENV=e2e` 환경변수로 Express 서버가 `e2e.json` 사용
+   - Playwright API mocking 대신 실제 API 호출
+   - 더 현실적이고 유지보수하기 쉬운 테스트 환경
+   - `e2e.json`을 `.gitignore`에 추가하여 테스트 데이터 격리
 
-2. **MUI Select 컴포넌트 처리**
+2. **E2E 전용 서버 설정**
+   - `server:e2e`: `TEST_ENV=e2e node --watch server.js`
+   - `dev:e2e`: Express + Vite 동시 실행
+   - `playwright.config.ts`에서 `pnpm dev:e2e` 사용
+
+3. **MUI Select 컴포넌트 처리**
    - `<div>`로 렌더링되는 MUI Select는 `toHaveValue()` 사용 불가
    - `textContent()`로 값 검증
 
-3. **정확한 텍스트 매칭**
+4. **정확한 텍스트 매칭**
    - 부분 매칭으로 인한 strict mode violation 해결
    - `getByText(text, { exact: true })` 사용
 
-4. **Strict mode violation 해결**
+5. **Strict mode violation 해결**
    - `getByRole('heading', { name: '일정 수정' })`으로 구체적인 요소 선택
 
 ---
@@ -102,29 +108,43 @@ e2e/
 └── *.spec.ts                   # 테스트 파일들
 ```
 
-### API Mocking 예시
+### E2E 환경 설정 예시
 
+**server.js - 환경변수로 DB 분리**
+```javascript
+const dbName = process.env.TEST_ENV === 'e2e' ? 'e2e.json' : 'realEvents.json';
+```
+
+**package.json - E2E 전용 스크립트**
+```json
+{
+  "server:e2e": "TEST_ENV=e2e node --watch server.js",
+  "dev:e2e": "concurrently \"pnpm run server:e2e\" \"pnpm run start\""
+}
+```
+
+**playwright.config.ts - E2E 서버 사용**
 ```typescript
-// test-helpers.ts의 setup() 메서드
+webServer: {
+  command: 'pnpm dev:e2e',  // TEST_ENV=e2e로 실행
+  url: 'http://localhost:5173',
+}
+```
+
+**test-helpers.ts - 실제 API로 초기화**
+```typescript
 async setup() {
-  let mockEvents: any[] = [];
-
-  // GET /api/events
-  await this.page.route('**/api/events', (route) => {
-    if (route.request().method() === 'GET') {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ events: mockEvents }),
-      });
-    }
-  });
-
-  // POST /api/events
-  // ... mockEvents에 추가
-
   await this.page.goto('http://localhost:5173');
   await this.navigation.clearAllStorage();
+
+  // e2e.json 초기화: 모든 기존 일정 삭제
+  const response = await this.page.request.get('http://localhost:3000/api/events');
+  const data = await response.json();
+
+  for (const event of data.events) {
+    await this.page.request.delete(`http://localhost:3000/api/events/${event.id}`);
+  }
+
   await this.page.reload();
 }
 ```
