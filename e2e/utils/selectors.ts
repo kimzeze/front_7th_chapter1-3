@@ -53,7 +53,8 @@ export const EVENT_FORM_SELECTORS = {
   submitButton: '[data-testid="event-submit-button"]',
   submitButtonByText: (isEditing: boolean) =>
     `button:has-text("${isEditing ? '일정 수정' : '일정 추가'}")`,
-  deleteButton: 'button:has-text("삭제")',
+  deleteButton: '[aria-label="Delete event"]',
+  editButton: '[aria-label="Edit event"]',
   cancelButton: 'button:has-text("취소")',
 
   // 폼 제목

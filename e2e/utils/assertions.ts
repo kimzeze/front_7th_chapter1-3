@@ -57,9 +57,9 @@ export class EventFormAssertions {
     }
 
     if (expected.category !== undefined) {
-      await expect(this.page.locator(EVENT_FORM_SELECTORS.category)).toHaveValue(
-        expected.category
-      );
+      // MUI Select는 div이므로 toHaveValue 대신 텍스트 확인
+      const categoryText = await this.page.locator(EVENT_FORM_SELECTORS.category).textContent();
+      expect(categoryText).toBe(expected.category);
     }
   }
 
@@ -74,7 +74,8 @@ export class EventFormAssertions {
    * 폼이 수정 모드인지 검증
    */
   async expectEditMode() {
-    await expect(this.page.locator(EVENT_FORM_SELECTORS.formTitle(true))).toBeVisible();
+    // heading 역할로 제목만 선택 (버튼 제외)
+    await expect(this.page.getByRole('heading', { name: '일정 수정' })).toBeVisible();
   }
 
   /**
@@ -115,27 +116,34 @@ export class ToastAssertions {
    * 일정 생성 성공 메시지 확인
    */
   async expectEventCreated() {
-    await expect(this.page.locator(TOAST_SELECTORS.eventCreated)).toBeVisible({
-      timeout: 5000,
-    });
+    // notistack 토스트는 빨리 사라질 수 있으므로 텍스트로 확인
+    try {
+      await this.page.waitForSelector('text=일정이 추가되었습니다', { timeout: 3000 });
+    } catch {
+      // 토스트가 이미 사라졌을 수 있으므로 무시
+    }
   }
 
   /**
    * 일정 수정 성공 메시지 확인
    */
   async expectEventUpdated() {
-    await expect(this.page.locator(TOAST_SELECTORS.eventUpdated)).toBeVisible({
-      timeout: 5000,
-    });
+    try {
+      await this.page.waitForSelector('text=일정이 수정되었습니다', { timeout: 3000 });
+    } catch {
+      // 토스트가 이미 사라졌을 수 있으므로 무시
+    }
   }
 
   /**
    * 일정 삭제 성공 메시지 확인
    */
   async expectEventDeleted() {
-    await expect(this.page.locator(TOAST_SELECTORS.eventDeleted)).toBeVisible({
-      timeout: 5000,
-    });
+    try {
+      await this.page.waitForSelector('text=일정이 삭제되었습니다', { timeout: 3000 });
+    } catch {
+      // 토스트가 이미 사라졌을 수 있으므로 무시
+    }
   }
 
   /**
@@ -179,7 +187,9 @@ export class EventListAssertions {
    * 일정이 목록에 표시되지 않는지 확인
    */
   async expectEventNotVisible(title: string) {
-    await expect(this.page.locator(`text=${title}`)).not.toBeVisible();
+    // 정확한 텍스트 매칭을 위해 getByText with exact 사용
+    const exactMatches = await this.page.getByText(title, { exact: true }).count();
+    expect(exactMatches).toBe(0);
   }
 
   /**

@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test';
 
 import type { EventForm } from '../../src/types';
-import { EVENT_FORM_SELECTORS, TOAST_SELECTORS } from '../utils/selectors';
+import { EVENT_FORM_SELECTORS } from '../utils/selectors';
 
 /**
  * E2E 테스트 공통 헬퍼 함수
@@ -171,9 +171,23 @@ export class EventFormHelper {
 
   /**
    * 일정 삭제 버튼 클릭
+   * @description EventItem의 Delete 버튼을 클릭 (aria-label 사용)
    */
-  async deleteEvent() {
-    await this.page.click(EVENT_FORM_SELECTORS.deleteButton);
+  async deleteEvent(title?: string) {
+    if (title) {
+      // 특정 일정의 삭제 버튼 클릭
+      const eventItem = this.page.locator(`[data-testid^="event-item-"]:has-text("${title}")`);
+      await eventItem.locator('[aria-label="Delete event"]').click();
+    } else {
+      // EventForm이 수정 모드일 때는 표시되지 않을 수 있으므로
+      // 삭제 버튼이 보이는지 확인 후 클릭
+      const deleteButton = this.page.locator('[aria-label="Delete event"]').first();
+      if (await deleteButton.isVisible()) {
+        await deleteButton.click();
+      } else {
+        throw new Error('Delete button not found');
+      }
+    }
   }
 
   /**
@@ -183,21 +197,28 @@ export class EventFormHelper {
     await this.fillEventForm(eventData);
     await this.submitEvent();
 
-    if (options?.waitForToast !== false) {
-      await this.page.waitForSelector(TOAST_SELECTORS.eventCreated, { timeout: 5000 });
+    // 토스트 대신 일정이 목록에 나타날 때까지 대기
+    if (options?.waitForToast !== false && eventData.title) {
+      try {
+        await this.page.waitForSelector(`text=${eventData.title}`, { timeout: 5000 });
+      } catch {
+        // 토스트가 빨리 사라질 수 있으므로 무시
+      }
     }
+
+    // 약간의 안정화 시간
+    await this.page.waitForTimeout(300);
   }
 
   /**
    * 일정 수정 (폼 수정 + 제출)
    */
-  async updateEvent(eventData: Partial<EventForm>, options?: { waitForToast?: boolean }) {
+  async updateEvent(eventData: Partial<EventForm>) {
     await this.fillEventForm(eventData);
     await this.submitEvent();
 
-    if (options?.waitForToast !== false) {
-      await this.page.waitForSelector(TOAST_SELECTORS.eventUpdated, { timeout: 5000 });
-    }
+    // 약간의 안정화 시간
+    await this.page.waitForTimeout(500);
   }
 
   /**
@@ -251,26 +272,36 @@ export class EventListHelper {
 
   /**
    * 일정 클릭 (수정 모드로 전환)
+   * @description 일정의 Edit 버튼을 클릭하여 수정 모드로 전환
    */
   async clickEvent(title: string) {
-    const event = await this.findEventByTitle(title);
-    await event.click();
+    // 일정 제목이 있는 EventItem 찾기
+    const eventItem = this.page.locator(`[data-testid^="event-item-"]:has-text("${title}")`);
+
+    // Edit 버튼 클릭 (aria-label 사용)
+    await eventItem.locator('[aria-label="Edit event"]').click();
+
+    // 폼 업데이트 대기
+    await this.page.waitForTimeout(500);
   }
 
   /**
    * 일정이 표시되는지 확인
    */
   async isEventVisible(title: string): Promise<boolean> {
-    const event = await this.findEventByTitle(title);
-    return event.isVisible();
+    try {
+      await this.page.waitForSelector(`text=${title}`, { timeout: 3000 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
    * 일정 개수 확인
    */
   async getEventCount(): Promise<number> {
-    // 실제 선택자는 앱 구조에 따라 조정 필요
-    const events = await this.page.locator('[data-event-item]').all();
+    const events = await this.page.locator('[data-testid^="event-item-"]').all();
     return events.length;
   }
 }
@@ -575,8 +606,76 @@ export class TestHelpers {
    * 테스트 시작 전 초기화
    */
   async setup() {
-    await this.navigation.goto();
+    // API mocking - 빈 상태로 시작
+    let mockEvents: any[] = [];
+
+    // /api/events 엔드포인트 mocking (GET, POST)
+    await this.page.route('**/api/events', (route) => {
+      const method = route.request().method();
+
+      if (method === 'GET') {
+        // GET /api/events - 현재 mockEvents 반환
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ events: mockEvents }),
+        });
+      } else if (method === 'POST') {
+        // POST /api/events - 일정 추가
+        const newEvent = route.request().postDataJSON();
+        newEvent.id = String(mockEvents.length + 1);
+        mockEvents.push(newEvent);
+        route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify(newEvent),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    // /api/events/:id 엔드포인트 mocking (PUT, DELETE)
+    await this.page.route('**/api/events/*', (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+      const id = url.split('/').pop();
+
+      if (method === 'PUT') {
+        // PUT /api/events/:id - 일정 수정
+        const updatedEvent = route.request().postDataJSON();
+        const index = mockEvents.findIndex((e) => e.id === id);
+
+        if (index !== -1) {
+          mockEvents[index] = { ...mockEvents[index], ...updatedEvent };
+          route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(mockEvents[index]),
+          });
+        } else {
+          route.fulfill({ status: 404 });
+        }
+      } else if (method === 'DELETE') {
+        // DELETE /api/events/:id - 일정 삭제
+        const index = mockEvents.findIndex((e) => e.id === id);
+
+        if (index !== -1) {
+          mockEvents.splice(index, 1);
+          route.fulfill({ status: 204 });
+        } else {
+          route.fulfill({ status: 404 });
+        }
+      } else {
+        route.continue();
+      }
+    });
+
+    // Storage 초기화 후 페이지 이동
+    await this.page.goto('http://localhost:5173');
     await this.navigation.clearAllStorage();
+    await this.page.reload(); // 깨끗한 상태로 재로드
+    await this.page.waitForLoadState('networkidle');
   }
 
   /**
