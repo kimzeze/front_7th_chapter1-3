@@ -10,7 +10,7 @@
     "start": "vite",
     "dev": "concurrently \"pnpm run server:watch\" \"pnpm run start\"",
     "dev:e2e": "concurrently \"pnpm run server:e2e\" \"pnpm run start\"",
-    "test": "vitest",
+    "test": "vitest run --project=unit",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "build": "tsc -b && vite build",
