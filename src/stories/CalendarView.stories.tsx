@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import CalendarView from '../components/calendar/CalendarView';
 import { Event } from '../types';
-import { getWeekDates, getWeeksAtMonth } from '../utils/dateUtils';
 
 /**
  * CalendarView 컴포넌트

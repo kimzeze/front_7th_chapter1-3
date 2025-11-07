@@ -412,8 +412,10 @@ export class DragAndDropHelper {
    */
   async dragEventToDate(eventTitle: string, targetDate: string) {
     // EventCard를 찾기 (data-testid 사용)
-    const eventCard = this.page.locator(`[data-testid^="event-card-"]:has-text("${eventTitle}")`).first();
-    
+    const eventCard = this.page
+      .locator(`[data-testid^="event-card-"]:has-text("${eventTitle}")`)
+      .first();
+
     // 대상 셀 찾기 (data-date 속성 사용)
     const targetCell = this.page.locator(`[data-date="${targetDate}"]`).first();
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 import { EventFormFactory, DateHelper } from './fixtures/test-data';
 import { createHelpers } from './fixtures/test-helpers';
@@ -54,7 +54,6 @@ test.describe('날짜 클릭으로 일정 생성', () => {
         date: targetDate,
       });
     });
-
   });
 
   /**
@@ -119,4 +118,3 @@ test.describe('날짜 클릭으로 일정 생성', () => {
     });
   });
 });
-
