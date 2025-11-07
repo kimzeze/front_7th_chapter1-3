@@ -28,6 +28,7 @@ export default mergeConfig(
           test: {
             name: 'unit',
             include: ['src/**/*.spec.{ts,tsx}'],
+            exclude: ['src/__tests__/e2e/**'],
           },
         },
         {
