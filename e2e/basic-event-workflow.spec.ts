@@ -296,28 +296,6 @@ test.describe('기본 일정 관리 워크플로우', () => {
     }
   });
 
-  test.skip('사용자가 제목 없이 일정을 생성하려 하면 제출이 차단된다', async ({ page }) => {
-    // TODO: 현재 앱은 빈 제목을 허용함. 향후 validation 추가 시 이 테스트 활성화
-    const helpers = createHelpers(page);
-
-    // Given: 제목이 비어있는 일정 데이터
-    const invalidData = InvalidData.emptyTitle;
-
-    // When: 제목 없이 제출 시도
-    await helpers.eventForm.fillEventForm(invalidData);
-    await helpers.eventForm.submitEvent();
-
-    // Then: 제출 차단되거나 에러 표시
-    // HTML5 validation이나 커스텀 validation 확인
-    const titleInput = page.locator('#title');
-    const isInvalid = await titleInput.evaluate((el: HTMLInputElement) => {
-      return !el.validity.valid || el.getAttribute('aria-invalid') === 'true';
-    });
-
-    // 제출이 차단되었는지 확인
-    expect(isInvalid).toBeTruthy();
-  });
-
   /**
    * 6. 여러 일정 관리
    */

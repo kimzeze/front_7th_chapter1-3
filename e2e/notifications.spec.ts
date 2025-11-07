@@ -49,10 +49,5 @@ test.describe('알림 시스템', () => {
       await assert.toast.expectEventCreated();
       await assert.eventList.expectEventVisible('알림 테스트 회의');
     });
-
-    test.skip('사용자가 알림 없음 옵션을 선택할 수 있다', async () => {
-      // 알림 없음 옵션이 NOTIFICATION_OPTIONS에 없음
-      // 현재는 최소 1분 전 알림만 선택 가능
-    });
   });
 });
