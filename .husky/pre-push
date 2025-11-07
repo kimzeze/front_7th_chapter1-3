@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 린트 체크
+pnpm run lint
+
+# 테스트 실행
+pnpm run test
+
+# Chromatic 시각적 회귀 테스트 (주석 해제 시 실행)
+# pnpm run chromatic

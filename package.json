@@ -22,7 +22,9 @@
     "chromatic": "pnpm exec chromatic --project-token=chpt_27660b3a9a24636",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -69,12 +71,23 @@
     "eslint-plugin-storybook": "^9.0.14",
     "eslint-plugin-vitest": "^0.5.4",
     "globals": "16.3.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
+    "lint-staged": "^16.2.6",
     "playwright": "^1.56.1",
     "storybook": "^10.0.4",
     "typescript": "^5.2.2",
     "vite": "^7.0.2",
     "vite-plugin-eslint": "^1.8.1",
     "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
 }
