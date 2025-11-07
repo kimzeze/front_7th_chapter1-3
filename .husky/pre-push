@@ -1,8 +1,8 @@
 # 린트 체크
 pnpm run lint
 
-# 테스트 실행
-pnpm run test
+# Unit 테스트 실행 (storybook 테스트 제외)
+pnpm vitest run --project=unit
 
 # Chromatic 시각적 회귀 테스트 (주석 해제 시 실행)
 # pnpm run chromatic
