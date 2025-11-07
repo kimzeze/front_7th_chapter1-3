@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run unit tests
-        run: pnpm run test
+        run: pnpm vitest run --project=unit
 
   e2e:
     runs-on: ubuntu-latest

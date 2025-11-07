@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './src/__tests__/e2e',
   /* 테스트 실행 시 최대 시간 (30초) */
   timeout: 30 * 1000,
   /* 테스트 실패 시 재시도 횟수 */
